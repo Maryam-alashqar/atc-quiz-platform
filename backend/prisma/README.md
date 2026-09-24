@@ -18,7 +18,9 @@ the migration contains additional PostgreSQL CHECK constraints.
 The schema covers users, classes, quiz ownership and class assignments, ordered
 questions/options, attempts and saved answers. CSV import and demo seeding are
 available; see [data/README.md](data/README.md) for commands, formats and demo
-credentials. The Nest Prisma service and API rules are subsequent steps.
+credentials. The Nest Prisma service and cookie authentication are implemented;
+quiz/attempt API rules are subsequent steps. See
+[authentication.md](../docs/authentication.md) for authentication setup.
 
 Run the database constraint regression checks from the repository root:
 

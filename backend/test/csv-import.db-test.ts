@@ -52,7 +52,7 @@ afterAll(async () => {
   await admin.end();
 });
 
-describe.sequential('CSV importer against PostgreSQL', () => {
+describe.sequential('CSV import — PostgreSQL persistence', () => {
   it('imports the full dataset concurrently without duplicating records', async () => {
     const summaries = await Promise.all([
       importDataset(db, data),

@@ -18,7 +18,8 @@ validator and transactional importer used for external data. Prisma's
 
 All supplied accounts use the **local demo password `AtcDemo2026!`**. These are
 fictional accounts, not production credentials. Passwords in the database are
-salted scrypt hashes. The login API is not implemented yet.
+salted scrypt hashes. The login API is available; see
+[authentication.md](../../docs/authentication.md) for startup and manual login steps.
 
 | Role | Username | Details |
 | --- | --- | --- |

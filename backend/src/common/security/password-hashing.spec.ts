@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { hashPassword, verifyPassword } from './password.js';
 
-describe('password hashing', () => {
+describe('Authentication — password hashing', () => {
   it('uses independent salts and verifies only the matching password', async () => {
     const a = await hashPassword('كلمة مرور تجريبية');
     const b = await hashPassword('كلمة مرور تجريبية');

@@ -1,6 +1,6 @@
 # Implementation decisions
 
-This record covers the database and CSV-import stages implemented so far.
+This record covers the database, CSV-import and authentication stages implemented so far.
 Application/API decisions will be added as those stages are built.
 
 - PostgreSQL + Prisma fit the relational quiz data and provide migrations and
@@ -26,11 +26,23 @@ Application/API decisions will be added as those stages are built.
   has open, upcoming and closed examples. Subsequent seeds preserve stored dates.
 - Passwords use Node's asynchronous scrypt with independent random salts. Known
   plaintext credentials appear only in the intentionally public demo CSV/documentation;
-  the database stores hashes. Authentication endpoints are a subsequent stage.
+  the database stores hashes.
 - Imported questions always contain four distinct options and one correct choice.
   Drafts imported through CSV must also be complete; the future authoring UI can
   support incomplete drafts with stricter checks at publication.
 
-Still to implement: authentication/authorization, quiz management, timed attempts
+- Authentication uses a one-hour JWT in an HttpOnly, SameSite=Lax cookie, Secure
+  in production. Current roles are loaded from the database for each request.
+  Routes require authentication by default; admins access only explicitly allowed
+  roles. Resource ownership will be enforced in quiz services.
+- Cookie-authenticated writes require an exact trusted Origin, including login
+  and logout. Local API clients must supply it explicitly. CORS allows only the
+  configured frontend, and login attempts are limited per IP in the single process.
+- Logout clears the cookie; copied JWTs remain valid until expiry because this
+  MVP has no session revocation store or refresh-token flow.
+- Feature tests use explicit scenario names and verbose reports. Nest HTTP tests
+  run against isolated PostgreSQL schemas and include real validation and guards.
+
+Still to implement: quiz management, timed attempts
 and scoring, results/export, the application UI, full Compose startup and delivery
 documentation. A next-week enhancement plan will be completed with the final MVP.

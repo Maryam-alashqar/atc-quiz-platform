@@ -31,7 +31,7 @@ function change(
     .join('\n');
 }
 
-describe('CSV input validation', () => {
+describe('CSV import — input validation', () => {
   it('loads realistic bilingual sample data with all requested roles, classes and quiz modes', () => {
     const data = parseDataset(files(), demoNow);
     expect(data.classes.map((c) => c.name)).toEqual(['10A', '10B', '11A']);
@@ -89,25 +89,60 @@ describe('CSV input validation', () => {
   });
 
   it.each([
-    ['users', 'role', 'OWNER'],
-    ['users', 'className', '10A'],
-    ['users', 'password', 'short'],
-    ['quizzes', 'teacherUsername', 'missing-teacher'],
-    ['quizzes', 'classNames', '10A|missing-class'],
-    ['quizzes', 'durationMinutes', '0'],
-    ['quizzes', 'opensAt', '2026-09-24T09:00:00'],
-    ['quizzes', 'opensAt', '2026-02-30T09:00:00Z'],
-    ['quizzes', 'closesAt', 'NOW-2D'],
-    ['quizzes', 'penaltyValue', '0.25'],
-    ['questions', 'points', '0'],
-    ['questions', 'points', 'NaN'],
-    ['questions', 'points', '1.00001'],
-    ['questions', 'correctOption', '5'],
-    ['questions', 'option4', ''],
-    ['questions', 'quizId', 'a7c00000-0000-4000-8000-000000000099'],
+    ['an unsupported user role', 'users', 'role', 'OWNER'],
+    ['a class assigned to an admin', 'users', 'className', '10A'],
+    ['a short password', 'users', 'password', 'short'],
+    [
+      'an unknown quiz teacher',
+      'quizzes',
+      'teacherUsername',
+      'missing-teacher',
+    ],
+    ['an unknown assigned class', 'quizzes', 'classNames', '10A|missing-class'],
+    ['a zero quiz duration', 'quizzes', 'durationMinutes', '0'],
+    [
+      'an opening timestamp without a timezone',
+      'quizzes',
+      'opensAt',
+      '2026-09-24T09:00:00',
+    ],
+    [
+      'an impossible calendar date',
+      'quizzes',
+      'opensAt',
+      '2026-02-30T09:00:00Z',
+    ],
+    ['a closing date before the opening date', 'quizzes', 'closesAt', 'NOW-2D'],
+    [
+      'a penalty when negative marking is disabled',
+      'quizzes',
+      'penaltyValue',
+      '0.25',
+    ],
+    ['zero question points', 'questions', 'points', '0'],
+    ['nonnumeric question points', 'questions', 'points', 'NaN'],
+    [
+      'question points with excessive decimal precision',
+      'questions',
+      'points',
+      '1.00001',
+    ],
+    [
+      'a correct option outside the four choices',
+      'questions',
+      'correctOption',
+      '5',
+    ],
+    ['an empty answer option', 'questions', 'option4', ''],
+    [
+      'a question referencing an unknown quiz',
+      'questions',
+      'quizId',
+      'a7c00000-0000-4000-8000-000000000099',
+    ],
   ] as const)(
-    'rejects invalid %s.%s without displaying submitted values',
-    (file, column, value) => {
+    'rejects %s without displaying submitted values',
+    (_description, file, column, value) => {
       const input = files();
       change(input, file, column, value);
       expect(() => parseDataset(input, demoNow)).toThrow(
