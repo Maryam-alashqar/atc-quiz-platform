@@ -1,6 +1,6 @@
 # Implementation decisions
 
-This record covers the database, CSV-import, authentication, quiz-management and student-attempt stages implemented so far.
+This record covers the database, CSV-import, authentication, quiz-management, student-attempt and results/export stages implemented so far.
 Application/API decisions will be added as those stages are built.
 
 - PostgreSQL + Prisma fit the relational quiz data and provide migrations and
@@ -65,5 +65,14 @@ Application/API decisions will be added as those stages are built.
   wrong answers apply the selected penalty, blanks earn zero and totals floor at
   zero. Student responses never include answer keys, including after completion.
 
-Still to implement: teacher results/export, the application UI, full Compose startup and delivery
+- Teacher results enforce quiz ownership; admins can view all quizzes. Reports
+  lazily expire overdue attempts after authorization. Quiz-wide statistics exclude
+  unfinished attempts, and pagination uses a repeatable-read snapshot. Reports
+  contain attempts only, not a roster of students who have never started.
+- CSV exports include all attempts, preserve Arabic with a UTF-8 BOM, escape
+  quoted/multiline fields and neutralize spreadsheet formula prefixes. Exports
+  are in-memory for the assessment dataset. Student class labels reflect current
+  enrollment; historical class snapshots and large streaming exports are deferred.
+
+Still to implement: the application UI, full Compose startup and delivery
 documentation. A next-week enhancement plan will be completed with the final MVP.

@@ -42,4 +42,10 @@ deadline/grace boundaries, lazy expiry, ownership, input validation, answer-key
 redaction and concurrent start/save/submit requests. A coordinated quiz-lock test
 checks that starting waits for a grading edit and reads its committed points.
 
+Codex also implemented teacher/admin result reporting and CSV export with
+ownership checks before lazy expiry, paginated rows and quiz-wide statistics.
+Verification covers access restrictions, expiry from saved answers, safe response
+fields, pagination, empty reports, Arabic CSV round-tripping and spreadsheet
+formula protection. The results feature reuses the existing attempt scoring logic.
+
 This file will be updated as further stages are implemented and verified.
