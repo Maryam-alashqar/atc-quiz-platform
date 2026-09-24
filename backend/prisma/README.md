@@ -16,8 +16,9 @@ Commit the generated SQL migrations. Do not use `db push` instead of migrations:
 the migration contains additional PostgreSQL CHECK constraints.
 
 The schema covers users, classes, quiz ownership and class assignments, ordered
-questions/options, attempts and saved answers. CSV import, seed data, the Nest
-Prisma service and API rules belong to subsequent implementation steps.
+questions/options, attempts and saved answers. CSV import and demo seeding are
+available; see [data/README.md](data/README.md) for commands, formats and demo
+credentials. The Nest Prisma service and API rules are subsequent steps.
 
 Run the database constraint regression checks from the repository root:
 

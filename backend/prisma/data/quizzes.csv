@@ -1,0 +1,6 @@
+"id","teacherUsername","title","description","language","durationMinutes","opensAt","closesAt","status","negativeMarking","penaltyValue","classNames"
+"a7c00000-0000-4000-8000-000000000001","teacher-math","مراجعة الجبر والهندسة","اختبار أسبوعي للصف العاشر، دون خصم للإجابات الخاطئة.","AR","20","NOW-1D","NOW+30D","PUBLISHED","NONE","0","10A|10B"
+"a7c00000-0000-4000-8000-000000000002","teacher-english","English Grammar: Weekly Review","Choose the best answer. Wrong answers lose 25% of the question points.","EN","20","NOW-1D","NOW+30D","PUBLISHED","FRACTION","0.25","10A|10B|11A"
+"a7c00000-0000-4000-8000-000000000003","teacher-physics","القوى والطاقة والكهرباء","اختبار قادم للصف الحادي عشر. خصم نصف علامة لكل إجابة خاطئة.","AR","20","NOW+2D","NOW+9D","PUBLISHED","FIXED","0.5","11A"
+"a7c00000-0000-4000-8000-000000000004","teacher-math","مراجعة الأسبوع الماضي: رياضيات","مثال على اختبار انتهت فترة إتاحته.","AR","20","NOW-8D","NOW-1D","PUBLISHED","FRACTION","0.25","10A|10B"
+"a7c00000-0000-4000-8000-000000000005","teacher-science","Physics Fundamentals — Draft","Draft worksheet for the next review session.","EN","25","NOW+1D","NOW+8D","DRAFT","NONE","0","11A"
