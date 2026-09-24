@@ -1,7 +1,7 @@
 import { homePath } from '../components/layout/navigation'
 import { ButtonLink } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
-import { useCurrentUser } from '../app/guards'
+import { useCurrentUser } from '../app/useCurrentUser'
 import { useI18n } from '../i18n/context'
 
 export function NotFoundPage() {

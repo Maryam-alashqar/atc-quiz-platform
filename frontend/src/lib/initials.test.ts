@@ -1,4 +1,4 @@
-import { initials } from './Avatar'
+import { initials } from './initials'
 
 describe('initials', () => {
   it('uses the first letters of the first and last names', () => {

@@ -1,17 +1,12 @@
-import { createBrowserRouter, Navigate } from 'react-router'
-import { useMe } from '../api/auth'
+import { createBrowserRouter, Outlet } from 'react-router'
 import { AppShell } from '../components/layout/AppShell'
-import { homePath } from '../components/layout/navigation'
-import { Spinner } from '../components/ui/States'
 import { LoginPage } from '../features/auth/LoginPage'
 import { NotFoundPage } from '../features/NotFoundPage'
+import { DashboardPage } from '../features/student/DashboardPage'
+import { QuizzesPage } from '../features/student/QuizzesPage'
+import { ResultsPage } from '../features/student/ResultsPage'
 import { RequireAuth, RequireRole } from './guards'
-
-function HomeRedirect() {
-  const me = useMe()
-  if (me.isPending) return <Spinner />
-  return <Navigate to={me.data ? homePath(me.data.role) : '/login'} replace />
-}
+import { HomeRedirect } from './HomeRedirect'
 
 export const router = createBrowserRouter([
   { path: '/', element: <HomeRedirect /> },
@@ -23,9 +18,14 @@ export const router = createBrowserRouter([
         path: 'student',
         element: (
           <RequireRole roles={['STUDENT']}>
-            <p className="py-10 text-center text-muted">Student area</p>
+            <Outlet />
           </RequireRole>
         ),
+        children: [
+          { index: true, element: <DashboardPage /> },
+          { path: 'quizzes', element: <QuizzesPage /> },
+          { path: 'results', element: <ResultsPage /> },
+        ],
       },
       {
         path: 'manage/*',

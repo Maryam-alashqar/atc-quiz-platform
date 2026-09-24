@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 
 export function Card({ className = '', ...rest }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={`rounded-3xl bg-surface shadow-card ${className}`} {...rest} />
+  return <div className={`min-w-0 rounded-3xl bg-surface shadow-card ${className}`} {...rest} />
 }
 
 interface SectionCardProps {

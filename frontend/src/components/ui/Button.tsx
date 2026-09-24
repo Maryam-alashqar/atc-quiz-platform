@@ -18,7 +18,7 @@ const sizes: Record<Size, string> = {
   lg: 'min-h-13 px-7 text-base',
 }
 
-export function buttonClass(variant: Variant = 'primary', size: Size = 'md', extra = '') {
+function buttonClass(variant: Variant = 'primary', size: Size = 'md', extra = '') {
   return `${base} ${variants[variant]} ${sizes[size]} ${extra}`
 }
 
