@@ -7,6 +7,7 @@ export interface AuthUser {
   name: string;
   role: Role;
   classId: string | null;
+  className: string | null;
 }
 
 export interface AuthRequest extends Request {

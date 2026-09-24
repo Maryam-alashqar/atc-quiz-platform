@@ -7,6 +7,7 @@ and return only that student's records. Writes also require the configured
 | Method | Path | Behavior |
 | --- | --- | --- |
 | GET | `/quizzes?page=1&pageSize=20` | Published, open quizzes assigned to the student's class; metadata and own attempt summary |
+| GET | `/quizzes/upcoming?page=1&pageSize=20` | Published quizzes for the student's class that open later, soonest first; metadata only, not startable until `opensAt` |
 | GET | `/quizzes/:id` | Safe metadata preview; previously attempted quizzes remain accessible after closing |
 | POST | `/quizzes/:id/attempt` | Start or resume the single attempt; no body fields; returns 200 |
 | GET | `/attempts?page=1&pageSize=20` | Own attempt history, including unfinished attempts |

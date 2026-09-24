@@ -25,6 +25,7 @@ describe('Authentication — login', () => {
         name: expect.any(String),
         role: username.toUpperCase(),
         classId: username === 'student' ? context.classroom.id : null,
+        className: username === 'student' ? context.classroom.name : null,
       });
       expect(Object.keys(response.body)).toEqual(['user']);
       expect(response.headers['cache-control']).toBe('no-store');

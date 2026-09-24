@@ -46,6 +46,41 @@ describe('Student quizzes — availability and safe previews', () => {
     expect(JSON.stringify(response.body)).not.toContain('options');
   });
 
+  it('lists upcoming quizzes for the student’s class separately, soonest first, without making them startable', async () => {
+    const later = await context.publishQuiz({
+      opensAt: new Date(context.now().getTime() + 7_200_000).toISOString(),
+      closesAt: new Date(context.now().getTime() + 10_800_000).toISOString(),
+    });
+    const sooner = await context.publishQuiz({
+      opensAt: new Date(context.now().getTime() + 60_000).toISOString(),
+    });
+    await context.publishQuiz();
+    await context.publishQuiz({
+      opensAt: new Date(context.now().getTime() + 60_000).toISOString(),
+      classIds: [context.secondClass.id],
+    });
+    const draft = context.quiz();
+    draft.opensAt = new Date(context.now().getTime() + 60_000).toISOString();
+    await context.api('teacher', 'post', '/quizzes', draft).expect(201);
+
+    const response = await context
+      .studentApi('get', '/quizzes/upcoming')
+      .expect(200);
+    expect(response.body.items.map((q: { id: string }) => q.id)).toEqual([
+      sooner.id,
+      later.id,
+    ]);
+    expect(response.body.items[0]).toMatchObject({
+      questionCount: 3,
+      attempt: null,
+    });
+    expect(JSON.stringify(response.body)).not.toContain('isCorrect');
+    expect(JSON.stringify(response.body)).not.toContain('prompt');
+    await context
+      .studentApi('post', `/quizzes/${sooner.id}/attempt`)
+      .expect(404);
+  });
+
   it('returns quiz metadata before starting without exposing question text or answer keys', async () => {
     const quiz = await context.publishQuiz();
     const response = await context
