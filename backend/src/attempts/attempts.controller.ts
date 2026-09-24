@@ -37,6 +37,12 @@ export class AttemptsController {
     return this.attempts.availableQuizzes(user, query);
   }
 
+  // Declared before quizzes/:id so the literal segment is not parsed as a UUID.
+  @Get('quizzes/upcoming')
+  upcoming(@CurrentUser() user: AuthUser, @Query() query: PaginationDto) {
+    return this.attempts.upcomingQuizzes(user, query);
+  }
+
   @Get('quizzes/:id')
   quiz(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
     return this.attempts.quizDetails(id, user);

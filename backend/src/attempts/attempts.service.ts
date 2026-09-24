@@ -203,7 +203,36 @@ export class AttemptsService {
   async availableQuizzes(user: AuthUser, query: PaginationDto) {
     await this.expireOverdueAttempts({ studentId: user.id });
     const now = this.clock.now();
-    const where = this.available(user, now);
+    return this.listQuizzes(
+      user,
+      query,
+      now,
+      'closesAt',
+      this.available(user, now),
+    );
+  }
+
+  /** Published quizzes for the student's class that have not opened yet. Metadata only; starting still requires the window. */
+  async upcomingQuizzes(user: AuthUser, query: PaginationDto) {
+    const now = this.clock.now();
+    return this.listQuizzes(user, query, now, 'opensAt', {
+      status: 'PUBLISHED',
+      opensAt: { gt: now },
+      classes: {
+        some: {
+          classId: user.classId ?? '00000000-0000-0000-0000-000000000000',
+        },
+      },
+    });
+  }
+
+  private async listQuizzes(
+    user: AuthUser,
+    query: PaginationDto,
+    now: Date,
+    first: 'opensAt' | 'closesAt',
+    where: Prisma.QuizWhereInput,
+  ) {
     const [total, quizzes] = await this.prisma.$transaction(
       [
         this.prisma.quiz.count({ where }),
@@ -214,7 +243,7 @@ export class AttemptsService {
             questions: { select: { points: true } },
             attempts: { where: { studentId: user.id } },
           },
-          orderBy: [{ closesAt: 'asc' }, { id: 'asc' }],
+          orderBy: [{ [first]: 'asc' }, { id: 'asc' }],
           skip: (query.page - 1) * query.pageSize,
           take: query.pageSize,
         }),

@@ -130,6 +130,7 @@ GET  /health
 
 Student
 GET  /student/quizzes                  available quizzes + own attempt state
+GET  /student/quizzes/upcoming         published quizzes that open later (metadata only)
 GET  /student/quizzes/:id              quiz details before starting
 POST /student/quizzes/:id/attempt      start, or resume the in-progress attempt
 GET  /student/attempts                 own attempt history
