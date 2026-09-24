@@ -1,6 +1,9 @@
-import { createBrowserRouter, Outlet } from 'react-router'
+import { createBrowserRouter, Navigate, Outlet } from 'react-router'
 import { AppShell } from '../components/layout/AppShell'
 import { LoginPage } from '../features/auth/LoginPage'
+import { QuizEditorPage } from '../features/manage/QuizEditorPage'
+import { QuizListPage } from '../features/manage/QuizListPage'
+import { QuizResultsPage } from '../features/manage/QuizResultsPage'
 import { NotFoundPage } from '../features/NotFoundPage'
 import { AttemptResultPage } from '../features/student/AttemptResultPage'
 import { DashboardPage } from '../features/student/DashboardPage'
@@ -46,12 +49,27 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        path: 'manage/*',
+        path: 'manage',
         element: (
           <RequireRole roles={['TEACHER', 'ADMIN']}>
-            <p className="py-10 text-center text-muted">Quiz management</p>
+            <Outlet />
           </RequireRole>
         ),
+        children: [
+          { index: true, element: <Navigate to="quizzes" replace /> },
+          { path: 'quizzes', element: <QuizListPage /> },
+          {
+            // Creating needs a teacher as owner; the admin oversees, edits and publishes.
+            path: 'quizzes/new',
+            element: (
+              <RequireRole roles={['TEACHER']}>
+                <QuizEditorPage />
+              </RequireRole>
+            ),
+          },
+          { path: 'quizzes/:id/edit', element: <QuizEditorPage /> },
+          { path: 'quizzes/:id/results', element: <QuizResultsPage /> },
+        ],
       },
       { path: '*', element: <NotFoundPage /> },
     ],

@@ -99,3 +99,43 @@ export function formatCountdown(ms: number): string {
   const ss = String(seconds).padStart(2, '0')
   return hours ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`
 }
+
+// --- Form input (datetime-local) ------------------------------------------------
+// Teachers type times as Amman wall-clock time, whatever timezone their laptop is in.
+
+function ammanOffsetMs(utcMs: number): number {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: CENTRE_TZ,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+      .formatToParts(new Date(utcMs))
+      .map((part) => [part.type, part.value]),
+  )
+  const asUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second)
+  return asUtc - Math.floor(utcMs / 1000) * 1000
+}
+
+/** "2026-09-28T09:00" (Amman) → "2026-09-28T06:00:00.000Z". Returns null for an empty or invalid value. */
+export function ammanLocalToIso(local: string): string | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(local)
+  if (!match) return null
+  const [, y, mo, d, h, mi] = match.map(Number)
+  const wall = Date.UTC(y, mo - 1, d, h, mi)
+  // Two passes handle a DST change between the guess and the real instant.
+  let utc = wall - ammanOffsetMs(wall)
+  utc = wall - ammanOffsetMs(utc)
+  return new Date(utc).toISOString()
+}
+
+/** ISO instant → "YYYY-MM-DDTHH:mm" in Amman, for a datetime-local input. */
+export function isoToAmmanLocal(iso: string): string {
+  const ms = Date.parse(iso)
+  return new Date(ms + ammanOffsetMs(ms)).toISOString().slice(0, 16)
+}

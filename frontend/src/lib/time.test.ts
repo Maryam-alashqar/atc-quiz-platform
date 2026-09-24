@@ -1,4 +1,4 @@
-import { ammanHour, daysUntil, formatCountdown, formatDate, remainingMs, serverNow, syncServerTime } from './time'
+import { ammanHour, ammanLocalToIso, daysUntil, formatCountdown, formatDate, isoToAmmanLocal, remainingMs, serverNow, syncServerTime } from './time'
 
 describe('server clock', () => {
   afterEach(() => syncServerTime(new Date().toISOString()))
@@ -52,5 +52,21 @@ describe('countdown', () => {
 
   it('shows hours for long quizzes', () => {
     expect(formatCountdown(3_723_000)).toBe('1:02:03')
+  })
+})
+
+describe('Amman form times', () => {
+  it('reads a typed time as Amman time (UTC+3)', () => {
+    expect(ammanLocalToIso('2026-09-28T09:00')).toBe('2026-09-28T06:00:00.000Z')
+  })
+
+  it('round-trips an instant through the form value', () => {
+    expect(isoToAmmanLocal('2026-09-28T06:00:00.000Z')).toBe('2026-09-28T09:00')
+    expect(ammanLocalToIso(isoToAmmanLocal('2026-12-31T21:30:00.000Z'))).toBe('2026-12-31T21:30:00.000Z')
+  })
+
+  it('rejects empty or malformed values', () => {
+    expect(ammanLocalToIso('')).toBeNull()
+    expect(ammanLocalToIso('28/09/2026 09:00')).toBeNull()
   })
 })

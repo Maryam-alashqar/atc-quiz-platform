@@ -20,10 +20,8 @@ export const navigation: Record<Role, NavItem[]> = {
     { to: '/manage/quizzes', label: 'nav.quizzes', icon: ClipboardList, end: true },
     { to: '/manage/quizzes/new', label: 'nav.newQuiz', icon: FilePlus2 },
   ],
-  ADMIN: [
-    { to: '/manage/quizzes', label: 'nav.allQuizzes', icon: ClipboardList, end: true },
-    { to: '/manage/quizzes/new', label: 'nav.newQuiz', icon: FilePlus2 },
-  ],
+  // The admin oversees every teacher's quizzes; creating one needs a teacher as its owner.
+  ADMIN: [{ to: '/manage/quizzes', label: 'nav.allQuizzes', icon: ClipboardList, end: true }],
 }
 
 export function homePath(role: Role): string {
