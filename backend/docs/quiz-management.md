@@ -92,7 +92,7 @@ blocked. Admins cannot bypass these restrictions. Frozen edits/deletion return
 Mutation transactions acquire a PostgreSQL `FOR UPDATE` row lock before reading
 the quiz and counting attempts. A regression test holds an attempt insert open,
 proves the edit is blocked waiting for that lock, then confirms it returns 409
-after the attempt commits. Future student-attempt creation **must use the same
+after the attempt commits. Student-attempt creation **uses the same
 PrismaService.lockQuiz transaction helper before reading quiz state** so an edit
 that wins the lock first cannot leave the attempt with stale questions/deadlines.
 

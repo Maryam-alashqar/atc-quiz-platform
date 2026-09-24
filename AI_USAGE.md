@@ -2,14 +2,14 @@
 
 Codex assisted with reviewing the supplied brief and the user's implementation
 scope, inspecting the React/NestJS starter, and implementing the database and
-CSV-import, authentication and quiz-management stages. The user chose the stack
+CSV-import, authentication, quiz-management and student-attempt stages. The user chose the stack
 and scope, requested backend-first work in separate stages, and approved merging
-the completed database, CSV and authentication branches into main.
+the completed database, CSV, authentication and quiz-management branches into main.
 
 Codex authored the Prisma schema, SQL migration/check constraints, database
 regression checks, CSV parser/importer, fictional demo records/questions, password
 hash helpers, Nest configuration/Prisma integration, cookie authentication,
-authorization guards, quiz management and supporting documentation. The user requested clear
+authorization guards, quiz management, student attempts/scoring and supporting documentation. The user requested clear
 feature-test names; tests were grouped and named by observable behavior. The demo seed calls the same importer
 as ordinary CSV imports; no real student records were used.
 
@@ -37,6 +37,15 @@ The user also reported that the database-stage verification commands worked.
 AI-generated sample questions are illustrative demo content, not a reviewed
 curriculum. The starter endpoint/test was replaced by a database-backed health
 endpoint and feature-level auth/quiz tests. Student attempt timing and scoring
-API tests are not implemented yet.
+API tests cover availability, persistence, weighted and negative scoring, server
+deadline/grace boundaries, lazy expiry, ownership, input validation, answer-key
+redaction and concurrent start/save/submit requests. A coordinated quiz-lock test
+checks that starting waits for a grading edit and reads its committed points.
+
+Codex also implemented teacher/admin result reporting and CSV export with
+ownership checks before lazy expiry, paginated rows and quiz-wide statistics.
+Verification covers access restrictions, expiry from saved answers, safe response
+fields, pagination, empty reports, Arabic CSV round-tripping and spreadsheet
+formula protection. The results feature reuses the existing attempt scoring logic.
 
 This file will be updated as further stages are implemented and verified.
