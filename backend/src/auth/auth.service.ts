@@ -11,7 +11,22 @@ const publicUserSelect = {
   name: true,
   role: true,
   classId: true,
+  class: { select: { name: true } },
 } as const;
+
+function toAuthUser({
+  class: classroom,
+  ...user
+}: {
+  id: string;
+  username: string;
+  name: string;
+  role: AuthUser['role'];
+  classId: string | null;
+  class: { name: string } | null;
+}): AuthUser {
+  return { ...user, className: classroom?.name ?? null };
+}
 const dummyHash = `scrypt$${'0'.repeat(32)}$${'0'.repeat(128)}`;
 
 @Injectable()
@@ -35,7 +50,8 @@ export class AuthService {
     );
     if (!account || !matches)
       throw new UnauthorizedException('Invalid username or password');
-    const { passwordHash: _passwordHash, ...user } = account;
+    const { passwordHash: _passwordHash, ...rest } = account;
+    const user = toAuthUser(rest);
     const token = await this.jwt.signAsync({ sub: user.id });
     return { user, token };
   }
@@ -65,6 +81,6 @@ export class AuthService {
       select: publicUserSelect,
     });
     if (!user) throw new UnauthorizedException('Invalid or expired session');
-    return user;
+    return toAuthUser(user);
   }
 }

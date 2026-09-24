@@ -47,7 +47,7 @@ for the SameSite=Lax cookie; arbitrary cross-site cookie deployment is out of sc
 
 Login JSON contains exactly `username` and `password`. Usernames are trimmed and
 lowercased; passwords are not trimmed. Extra fields are rejected. User responses
-contain `id`, `username`, `name`, `role`, `classId`; never password hashes or tokens.
+contain `id`, `username`, `name`, `role`, `classId`, `className`; never password hashes or tokens.
 
 Errors: 400 invalid input; 401 wrong credentials/missing or invalid session;
 403 untrusted Origin/insufficient role; 429 login limit exceeded. Unknown usernames
