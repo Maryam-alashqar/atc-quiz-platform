@@ -1,6 +1,6 @@
 # Implementation decisions
 
-This record covers the database, CSV-import, authentication and quiz-management stages implemented so far.
+This record covers the database, CSV-import, authentication, quiz-management and student-attempt stages implemented so far.
 Application/API decisions will be added as those stages are built.
 
 - PostgreSQL + Prisma fit the relational quiz data and provide migrations and
@@ -52,10 +52,18 @@ Application/API decisions will be added as those stages are built.
 - After any attempt starts, only title/description may change. All grading,
   timing, language and assignment fields are frozen, and deletion is blocked for
   teachers and admins. Quiz mutations lock the row before checking attempts;
-  student start logic must reuse this lock in its own transaction next stage.
+  student start logic reuses this lock before reading quiz data and creating an attempt.
 - Admin quiz creation requires an explicit teacher owner. Ownership transfers,
   unpublishing and archiving are deferred to keep this assessment scoped.
 
-Still to implement: timed attempts
-and scoring, results/export, the application UI, full Compose startup and delivery
+- Student deadlines are fixed on first start, capped by quiz closing time. A
+  10-second grace window accepts saves/submission strictly before its end. Expiry
+  is persisted lazily on access, not by a background scheduler. The UI must use
+  server time and the original deadline; refreshing never extends a timer.
+- Attempt row locks serialize saves, submission and expiry. Grading uses saved
+  answers and decimal arithmetic; correct answers earn their weighted points,
+  wrong answers apply the selected penalty, blanks earn zero and totals floor at
+  zero. Student responses never include answer keys, including after completion.
+
+Still to implement: teacher results/export, the application UI, full Compose startup and delivery
 documentation. A next-week enhancement plan will be completed with the final MVP.

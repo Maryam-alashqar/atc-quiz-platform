@@ -33,7 +33,7 @@ export async function createQuizTestApp() {
       secondClass,
       api: (
         role: string,
-        method: 'get' | 'post' | 'patch' | 'delete',
+        method: 'get' | 'post' | 'put' | 'patch' | 'delete',
         path: string,
         body?: object,
       ) => {

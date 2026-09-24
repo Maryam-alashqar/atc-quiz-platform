@@ -10,6 +10,7 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   private readonly quizTable: Prisma.Sql;
+  private readonly attemptTable: Prisma.Sql;
   constructor(config: ConfigService<Environment, true>) {
     const connectionString = config.get('DATABASE_URL', { infer: true });
     const schema =
@@ -17,9 +18,12 @@ export class PrismaService
     super({ adapter: new PrismaPg({ connectionString }, { schema }) });
     // Identifiers cannot be query parameters; quote the configured schema safely.
     this.quizTable = Prisma.raw(`"${schema.replaceAll('"', '""')}"."Quiz"`);
+    this.attemptTable = Prisma.raw(
+      `"${schema.replaceAll('"', '""')}"."Attempt"`,
+    );
   }
 
-  /** Mutations and future attempt creation must lock before reading quiz state. */
+  /** Mutations and attempt creation must lock before reading quiz state. */
   async lockQuiz(
     tx: Prisma.TransactionClient,
     quizId: string,
@@ -32,6 +36,17 @@ export class PrismaService
 
   async onModuleInit() {
     await this.$connect();
+  }
+
+  /** Serialize answer saves, submission and lazy expiry of the same attempt. */
+  async lockAttempt(
+    tx: Prisma.TransactionClient,
+    attemptId: string,
+  ): Promise<boolean> {
+    const rows = await tx.$queryRaw<
+      { id: string }[]
+    >`SELECT "id" FROM ${this.attemptTable} WHERE "id" = ${attemptId}::uuid FOR UPDATE`;
+    return rows.length > 0;
   }
   async onModuleDestroy() {
     await this.$disconnect();
