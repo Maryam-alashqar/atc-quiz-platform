@@ -1,6 +1,6 @@
 # Implementation decisions
 
-This record covers the database, CSV-import and authentication stages implemented so far.
+This record covers the database, CSV-import, authentication and quiz-management stages implemented so far.
 Application/API decisions will be added as those stages are built.
 
 - PostgreSQL + Prisma fit the relational quiz data and provide migrations and
@@ -34,7 +34,7 @@ Application/API decisions will be added as those stages are built.
 - Authentication uses a one-hour JWT in an HttpOnly, SameSite=Lax cookie, Secure
   in production. Current roles are loaded from the database for each request.
   Routes require authentication by default; admins access only explicitly allowed
-  roles. Resource ownership will be enforced in quiz services.
+  roles. Quiz services enforce teacher ownership and admin access.
 - Cookie-authenticated writes require an exact trusted Origin, including login
   and logout. Local API clients must supply it explicitly. CORS allows only the
   configured frontend, and login attempts are limited per IP in the single process.
@@ -43,6 +43,19 @@ Application/API decisions will be added as those stages are built.
 - Feature tests use explicit scenario names and verbose reports. Nest HTTP tests
   run against isolated PostgreSQL schemas and include real validation and guards.
 
-Still to implement: quiz management, timed attempts
+- Quiz creation defaults to Draft. Drafts may lack assignments/questions or have
+  incomplete options. Publication requires classes/questions and four distinct
+  options with exactly one correct answer per question, plus an unexpired window.
+- PATCH replaces supplied question/class arrays; omitted fields stay unchanged.
+  Question/option IDs are regenerated only when the question array is replaced.
+  API decimal fields use strings to preserve precision, and request sizes are bounded.
+- After any attempt starts, only title/description may change. All grading,
+  timing, language and assignment fields are frozen, and deletion is blocked for
+  teachers and admins. Quiz mutations lock the row before checking attempts;
+  student start logic must reuse this lock in its own transaction next stage.
+- Admin quiz creation requires an explicit teacher owner. Ownership transfers,
+  unpublishing and archiving are deferred to keep this assessment scoped.
+
+Still to implement: timed attempts
 and scoring, results/export, the application UI, full Compose startup and delivery
 documentation. A next-week enhancement plan will be completed with the final MVP.

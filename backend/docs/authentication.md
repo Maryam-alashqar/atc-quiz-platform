@@ -68,8 +68,9 @@ Invoke-RestMethod "$atcBase/auth/me" -WebSession $atcSession
 ```
 
 The final request should return **401**. Teacher/admin credentials are listed in
-[the seed documentation](../prisma/data/README.md). Student/teacher/admin quiz
-features are subsequent implementation stages; login already supports all roles.
+[the seed documentation](../prisma/data/README.md). Teacher/admin quiz management
+is available as documented in [quiz-management.md](quiz-management.md).
+Student attempts and results are subsequent stages; login supports all roles.
 
 Browser requests should use `credentials: 'include'`. Browsers send the Origin
 header automatically. Postman/curl/PowerShell must explicitly supply
@@ -89,8 +90,8 @@ cookie-authenticated writes, including login/logout, from CSRF.
   revoke a copied token before its expiry. There is no refresh-token flow yet.
 - Global guards protect routes by default. Mark explicitly public routes with
   `@Public()`; constrain roles with `@Roles('TEACHER', 'ADMIN')`, etc. Admin does
-  not implicitly bypass role restrictions. Ownership checks belong in future
-  quiz services; role guards alone do not implement resource ownership.
+  not implicitly bypass role restrictions. Quiz services additionally enforce
+  resource ownership; role guards alone do not grant access to another teacher's quiz.
 - Login throttling uses in-memory per-IP counters, suitable for this single
   process MVP. Restarting the process resets counters. The app does not trust
   X-Forwarded-For; a future reverse-proxy deployment must configure trusted proxies

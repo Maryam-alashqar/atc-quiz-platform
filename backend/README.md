@@ -2,7 +2,7 @@
 
 NestJS + TypeScript, PostgreSQL and Prisma. Implemented so far: the data model,
 transactional CSV import/demo seed, cookie-based JWT login/logout/current user,
-role guards and a database-backed health endpoint.
+role guards, teacher/admin quiz management and a database-backed health endpoint.
 
 ## Local setup
 
@@ -26,6 +26,7 @@ The API runs on `http://localhost:3000/api` by default. Verify it with
 ## Documentation
 
 - [Authentication API, manual login and environment settings](docs/authentication.md)
+- [Quiz management API, publication rules and feature tests](docs/quiz-management.md)
 - [CSV format, demo credentials and repeat-import behavior](prisma/data/README.md)
 - [Schema, migrations and database constraints](prisma/README.md)
 - [Implementation decisions](../DECISIONS.md)
@@ -52,4 +53,4 @@ HTTP and database integration tests require PostgreSQL. They create and remove
 only isolated test schemas; development data is preserved. TEST_DATABASE_URL can
 point tests at a separate database, otherwise they use DATABASE_URL.
 
-Quiz authoring, timed attempts, scoring and result endpoints are the next stages.
+Timed attempts, scoring and result endpoints are the next stages.
