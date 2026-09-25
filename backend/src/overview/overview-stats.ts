@@ -104,3 +104,67 @@ export function overviewStats(input: StatsInput) {
     teachers,
   };
 }
+
+export interface ProgressInput {
+  classes: { id: string; studentCount: number }[];
+  quizzes: {
+    id: string;
+    title: string;
+    closesAt: Date;
+    classIds: string[];
+  }[];
+  attempts: {
+    quizId: string;
+    studentClassId: string | null;
+    status: 'IN_PROGRESS' | 'SUBMITTED' | 'EXPIRED';
+    percent: number | null;
+  }[];
+}
+
+/**
+ * Per-quiz follow-up for a teacher: of the students in the assigned classes, how many
+ * finished, how many are part-way through and how many have not started.
+ * Open quizzes come first (soonest deadline first), then the most recently closed.
+ */
+export function quizProgress(input: ProgressInput, now: Date, limit = 8) {
+  const studentsIn = new Map(input.classes.map((c) => [c.id, c.studentCount]));
+  return input.quizzes
+    .map((quiz) => {
+      const mine = input.attempts.filter(
+        (a) =>
+          a.quizId === quiz.id &&
+          a.studentClassId !== null &&
+          quiz.classIds.includes(a.studentClassId),
+      );
+      const finished = mine.filter((a) => a.status !== 'IN_PROGRESS');
+      const inProgress = mine.length - finished.length;
+      const expected = quiz.classIds.reduce(
+        (sum, id) => sum + (studentsIn.get(id) ?? 0),
+        0,
+      );
+      const percents = finished
+        .map((a) => a.percent)
+        .filter((p): p is number => p !== null);
+      return {
+        id: quiz.id,
+        title: quiz.title,
+        closesAt: quiz.closesAt,
+        open: quiz.closesAt > now,
+        expected,
+        completed: finished.length,
+        inProgress,
+        notStarted: Math.max(0, expected - mine.length),
+        averagePercent: percents.length
+          ? Math.round(percents.reduce((s, p) => s + p, 0) / percents.length)
+          : null,
+      };
+    })
+    .sort((a, b) =>
+      a.open !== b.open
+        ? Number(b.open) - Number(a.open)
+        : a.open
+          ? a.closesAt.getTime() - b.closesAt.getTime()
+          : b.closesAt.getTime() - a.closesAt.getTime(),
+    )
+    .slice(0, limit);
+}

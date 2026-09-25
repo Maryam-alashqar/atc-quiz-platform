@@ -1,4 +1,8 @@
-import { overviewStats, type StatsInput } from './overview-stats.js';
+import {
+  overviewStats,
+  quizProgress,
+  type StatsInput,
+} from './overview-stats.js';
 
 const base: StatsInput = {
   classes: [
@@ -95,5 +99,93 @@ describe('Admin overview — participation statistics', () => {
       quizzes: 0,
       participation: null,
     });
+  });
+});
+
+describe('Teacher overview — per-quiz follow-up', () => {
+  const now = new Date('2026-09-25T09:00:00Z');
+  const classes = [
+    { id: 'c10a', studentCount: 20 },
+    { id: 'c10b', studentCount: 18 },
+  ];
+
+  it('splits the assigned students into finished, in progress and not started', () => {
+    const [quiz] = quizProgress(
+      {
+        classes,
+        quizzes: [
+          {
+            id: 'q',
+            title: 'Algebra',
+            closesAt: new Date('2026-09-30T09:00:00Z'),
+            classIds: ['c10a', 'c10b'],
+          },
+        ],
+        attempts: [
+          {
+            quizId: 'q',
+            studentClassId: 'c10a',
+            status: 'SUBMITTED',
+            percent: 80,
+          },
+          {
+            quizId: 'q',
+            studentClassId: 'c10b',
+            status: 'EXPIRED',
+            percent: 40,
+          },
+          {
+            quizId: 'q',
+            studentClassId: 'c10a',
+            status: 'IN_PROGRESS',
+            percent: null,
+          },
+          // Moved to a class the quiz is not assigned to: not counted here.
+          {
+            quizId: 'q',
+            studentClassId: 'c11a',
+            status: 'SUBMITTED',
+            percent: 100,
+          },
+        ],
+      },
+      now,
+    );
+    expect(quiz).toMatchObject({
+      open: true,
+      expected: 38,
+      completed: 2,
+      inProgress: 1,
+      notStarted: 35,
+      averagePercent: 60,
+    });
+  });
+
+  it('lists open quizzes first by deadline, then closed ones newest first', () => {
+    const quiz = (id: string, closesAt: string) => ({
+      id,
+      title: id,
+      closesAt: new Date(closesAt),
+      classIds: ['c10a'],
+    });
+    const order = quizProgress(
+      {
+        classes,
+        quizzes: [
+          quiz('closed-old', '2026-09-01T00:00:00Z'),
+          quiz('open-late', '2026-10-20T00:00:00Z'),
+          quiz('closed-new', '2026-09-20T00:00:00Z'),
+          quiz('open-soon', '2026-09-26T00:00:00Z'),
+        ],
+        attempts: [],
+      },
+      now,
+    ).map((q) => q.id);
+    expect(order).toEqual([
+      'open-soon',
+      'open-late',
+      'closed-new',
+      'closed-old',
+    ]);
   });
 });

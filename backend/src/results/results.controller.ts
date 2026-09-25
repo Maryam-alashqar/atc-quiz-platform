@@ -28,6 +28,15 @@ export class ResultsController {
     return this.results.list(id, user, query);
   }
 
+  @Get('students')
+  @Header('Cache-Control', 'no-store')
+  students(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.results.students(id, user);
+  }
+
   @Get('export')
   @Header('Cache-Control', 'no-store')
   async export(
