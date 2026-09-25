@@ -8,6 +8,8 @@ import { QuizzesModule } from './quizzes/quizzes.module.js';
 import { ClassesModule } from './classes/classes.module.js';
 import { AttemptsModule } from './attempts/attempts.module.js';
 import { ResultsModule } from './results/results.module.js';
+import { UsersModule } from './users/users.module.js';
+import { OverviewModule } from './overview/overview.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnvironment }),
@@ -17,6 +19,8 @@ import { ResultsModule } from './results/results.module.js';
     ClassesModule,
     AttemptsModule,
     ResultsModule,
+    UsersModule,
+    OverviewModule,
   ],
   controllers: [HealthController],
 })

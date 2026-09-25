@@ -1,89 +1,17 @@
-import { ArrowRight, BarChart3, CalendarClock, CheckCircle2, ClipboardCheck, FileText, Sun, Target, TimerOff } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { ArrowRight, BarChart3, CalendarClock, CheckCircle2, ClipboardCheck, FileText, Target, TimerOff } from 'lucide-react'
 import { Link } from 'react-router'
 import { useHistory, useAvailableQuizzes, useUpcomingQuizzes } from '../../api/student'
 import type { HistoryItem } from '../../api/types'
 import { useCurrentUser } from '../../app/useCurrentUser'
-import { ButtonLink } from '../../components/ui/Button'
+import { Hero } from '../../components/dashboard/Hero'
+import { StatCard } from '../../components/dashboard/StatCard'
 import { Card, SectionCard } from '../../components/ui/Card'
 import { ProgressRing } from '../../components/ui/ProgressRing'
 import { EmptyState, ErrorState, Spinner } from '../../components/ui/States'
 import { useI18n } from '../../i18n/context'
-import { ammanHour, formatDate, serverNow } from '../../lib/time'
-import hero800 from '../../assets/hero-800.webp'
-import hero1400 from '../../assets/hero-1400.webp'
+import { formatDate, serverNow } from '../../lib/time'
 import { QuizRow } from './QuizRow'
 import { progressSummary } from './quizState'
-
-function Hero({ name }: { name: string }) {
-  const { t } = useI18n()
-  const hour = ammanHour()
-  const greeting = hour < 12 ? 'dash.greeting.morning' : hour < 17 ? 'dash.greeting.afternoon' : 'dash.greeting.evening'
-  const firstName = name.trim().split(/\s+/)[0]
-  return (
-    <Card className="relative overflow-hidden bg-gradient-to-br from-surface to-ivory lg:grid lg:min-h-80 lg:grid-cols-[1.1fr_1fr]">
-      <div className="relative h-36 sm:h-48 lg:order-2 lg:h-auto">
-        {/* Blue wave edge from the design mock, mirrored in RTL. */}
-        <div className="absolute inset-0 hidden bg-secondary [clip-path:ellipse(100%_140%_at_100%_50%)] lg:block rtl:[clip-path:ellipse(100%_140%_at_0%_50%)]" />
-        <img
-          src={hero1400}
-          srcSet={`${hero800} 800w, ${hero1400} 1400w`}
-          sizes="(min-width: 1024px) 50vw, 100vw"
-          alt=""
-          className="absolute inset-0 size-full object-cover lg:[clip-path:ellipse(97%_140%_at_100%_50%)] rtl:lg:[clip-path:ellipse(97%_140%_at_0%_50%)]"
-        />
-      </div>
-      <div className="relative flex flex-col justify-center gap-4 p-6 sm:p-8 lg:p-10">
-        <p className="flex items-center gap-2 text-xs font-semibold tracking-[0.25em] text-muted uppercase">
-          <Sun className="size-5 text-gold" aria-hidden="true" />
-          {t(greeting, { name: firstName })}
-        </p>
-        <h1 className="font-serif text-4xl leading-[1.05] font-bold text-ink sm:text-5xl xl:text-6xl">
-          {t('dash.heroTitle')}
-          <br />
-          <span className="text-gold">{t('dash.heroAccent')}</span>
-        </h1>
-        <p className="max-w-md text-muted sm:text-lg">{t('dash.heroBody')}</p>
-        <div>
-          <ButtonLink to="/student/quizzes" size="lg">
-            {t('dash.heroCta')}
-            <ArrowRight className="size-5 rtl:-scale-x-100" aria-hidden="true" />
-          </ButtonLink>
-        </div>
-      </div>
-    </Card>
-  )
-}
-
-interface StatCardProps {
-  icon: ReactNode
-  label: string
-  value: ReactNode
-  hint: string
-  to: string
-  tone: 'sky' | 'gold'
-}
-
-function StatCard({ icon, label, value, hint, to, tone }: StatCardProps) {
-  return (
-    <Link
-      to={to}
-      className={`group flex min-w-0 flex-col items-start gap-1 rounded-3xl p-3.5 shadow-card transition-shadow hover:shadow-lift sm:flex-row sm:items-center sm:gap-4 sm:p-5 ${
-        tone === 'gold' ? 'bg-gold-soft' : 'bg-sky-soft'
-      }`}
-    >
-      <span className="hidden size-14 shrink-0 place-items-center rounded-2xl bg-surface text-primary shadow-card sm:grid">{icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-xs leading-tight text-muted sm:text-sm">{label}</span>
-        <span className="block font-serif text-2xl font-bold text-ink sm:text-3xl">{value}</span>
-        <span className="hidden truncate text-sm text-muted sm:block">{hint}</span>
-      </span>
-      <span className="hidden size-10 shrink-0 place-items-center rounded-full bg-surface text-primary transition-transform sm:grid group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5">
-        <ArrowRight className="size-4 rtl:-scale-x-100" aria-hidden="true" />
-      </span>
-    </Link>
-  )
-}
 
 function relativeDays(iso: string, locale: 'en' | 'ar') {
   const days = Math.round((Date.parse(iso) - serverNow()) / 86_400_000)
@@ -166,7 +94,13 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <Hero name={user.name} />
+      <Hero
+        name={user.name}
+        title={t('dash.heroTitle')}
+        accent={t('dash.heroAccent')}
+        body={t('dash.heroBody')}
+        cta={{ to: '/student/quizzes', label: t('dash.heroCta') }}
+      />
 
       {loading ? (
         <Spinner />

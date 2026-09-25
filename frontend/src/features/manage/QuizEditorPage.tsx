@@ -1,9 +1,11 @@
 import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, CheckCircle2, LoaderCircle, Lock, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
+import { useTeachers } from '../../api/admin'
 import { ApiError } from '../../api/client'
 import { useClasses, useDeleteQuiz, useManagedQuiz, usePublishQuiz, useSaveQuiz } from '../../api/manage'
 import type { NegativeMarking, TeacherQuizDetail } from '../../api/types'
+import { useCurrentUser } from '../../app/useCurrentUser'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -163,6 +165,12 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
   const save = useSaveQuiz(quiz?.id)
   const publish = usePublishQuiz()
   const remove = useDeleteQuiz()
+  // The API needs a teacher as owner: the admin picks one when creating a quiz.
+  const user = useCurrentUser()
+  const isAdmin = user.role === 'ADMIN'
+  const choosingOwner = !quiz && isAdmin
+  const teachers = useTeachers(choosingOwner)
+  const [teacherId, setTeacherId] = useState('')
   const [draft, setDraft] = useState<QuizDraft>(() => (quiz ? draftFromQuiz(quiz) : emptyDraft()))
   const [dirty, setDirty] = useState(false)
   const [issues, setIssues] = useState<Issue[]>([])
@@ -213,9 +221,10 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
     // Published quizzes must stay complete, so they are checked like a publish.
     const found = locked ? [] : andPublish || published ? publishIssues(draft) : saveIssues(draft)
     if (locked && !draft.title.trim()) found.push({ key: 'editor.issue.title' })
+    if (choosingOwner && !teacherId) found.unshift({ key: 'editor.issue.teacher' })
     setIssues(found)
     if (found.length) return
-    const input = toQuizInput(draft)
+    const input = { ...toQuizInput(draft), ...(choosingOwner && { teacherId }) }
     try {
       const saved = await save.mutateAsync(locked ? { title: input.title, description: input.description } : input)
       setDirty(false)
@@ -249,7 +258,7 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
       <div>
         <Link to="/manage/quizzes" className="inline-flex min-h-11 items-center gap-2 font-semibold text-secondary hover:text-primary">
           <ArrowLeft className="size-5 rtl:-scale-x-100" aria-hidden="true" />
-          {t('nav.quizzes')}
+          {t(isAdmin ? 'nav.allQuizzes' : 'nav.quizzes')}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-serif text-3xl font-bold text-ink sm:text-4xl">{quiz ? t('editor.editTitle') : t('nav.newQuiz')}</h1>
@@ -266,6 +275,30 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
 
       <Section title={t('editor.details')}>
         <div className="grid gap-4">
+          {choosingOwner && (
+            <Field label={t('editor.teacher')} hint={t('editor.teacherHint')}>
+              <select
+                value={teacherId}
+                onChange={(e) => {
+                  setTeacherId(e.target.value)
+                  setDirty(true)
+                }}
+                className={inputClass}
+              >
+                <option value="">{teachers.isPending ? t('common.loading') : t('editor.chooseTeacher')}</option>
+                {teachers.data?.items.map((teacher) => (
+                  <option key={teacher.id} value={teacher.id}>
+                    {teacher.name} ({teacher.username})
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+          {quiz && isAdmin && (
+            <p className="text-sm text-muted">
+              {t('manage.by')} <bdi className="font-semibold text-ink">{quiz.teacher.name}</bdi>
+            </p>
+          )}
           <Field label={t('editor.title')}>
             <input dir={dir} value={draft.title} onChange={(e) => update({ title: e.target.value })} maxLength={200} className={inputClass} />
           </Field>
@@ -421,7 +454,7 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
         </p>
       )}
 
-      <div className="fixed inset-x-0 bottom-16 z-10 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur lg:start-[calc(15rem+2.5rem)] lg:end-4 lg:bottom-4 lg:rounded-2xl lg:border lg:shadow-lift">
+      <div className="fixed inset-x-0 bottom-16 z-10 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur lg:start-[calc(14rem+2.5rem)] lg:end-4 lg:bottom-4 lg:rounded-2xl lg:border lg:shadow-lift">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3">
           {quiz && !locked && (
             <Button variant="ghost" className="text-danger hover:bg-danger-soft" onClick={() => setConfirmDelete(true)} disabled={busy}>

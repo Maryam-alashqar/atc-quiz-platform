@@ -6,7 +6,7 @@ import { useI18n } from '../../i18n/context'
 import { LogoMark } from '../brand/LogoMark'
 import { Avatar } from '../ui/Avatar'
 import { navigation } from './navigation'
-import { SkylineArt } from './SkylineArt'
+import sidebarAmman from '../../assets/sidebar-amman.webp'
 
 function LanguageToggle({ className = '' }: { className?: string }) {
   const { t, locale, setLocale } = useI18n()
@@ -59,11 +59,16 @@ function LogoutButton({ className = '' }: { className?: string }) {
 function Sidebar({ user }: { user: User }) {
   const { t } = useI18n()
   return (
-    <aside className="sticky top-4 hidden h-[calc(100dvh-2rem)] w-60 shrink-0 flex-col overflow-hidden rounded-[2rem] bg-primary text-white lg:flex">
-      <div className="px-7 pt-8 pb-10">
+    <aside className="sticky top-4 hidden h-[calc(100dvh-2rem)] w-56 shrink-0 flex-col overflow-hidden rounded-[2rem] bg-primary text-white lg:flex">
+      {/* Amman at dusk, fading into the sidebar blue so the menu stays readable above it. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%]" aria-hidden="true">
+        <img src={sidebarAmman} alt="" className="size-full object-cover object-top" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary via-primary/40 to-primary/85" />
+      </div>
+      <div className="relative z-10 flex flex-col items-center px-5 pt-8 pb-8 text-center">
         <LogoMark tone="onDark" className="mb-2 size-14" />
         <p className="font-serif text-4xl leading-none font-bold tracking-wide">{t('brand.name')}</p>
-        <p className="mt-1 text-sm text-sky">{t('brand.full')}</p>
+        <p className="mt-1.5 text-sm text-sky">{t('brand.full')}</p>
       </div>
       <nav aria-label={t('nav.main')} className="relative z-10 flex flex-col gap-1.5 pe-4">
         {navigation[user.role].map(({ to, label, icon: Icon, end }) => (
@@ -82,8 +87,7 @@ function Sidebar({ user }: { user: User }) {
           </NavLink>
         ))}
       </nav>
-      <SkylineArt className="pointer-events-none mt-auto w-full text-white/10" />
-      <div className="relative -mt-16 flex items-center justify-between px-4 pb-4">
+      <div className="relative z-10 mt-auto flex items-center justify-between px-4 pb-4">
         <LanguageToggle className="text-sky hover:bg-white/10 hover:text-white" />
         <LogoutButton className="text-sky hover:bg-white/10 hover:text-white" />
       </div>

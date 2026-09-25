@@ -1,4 +1,4 @@
-import { BarChart3, ClipboardList, FilePlus2, FileText, House, type LucideIcon } from 'lucide-react'
+import { BarChart3, ClipboardList, FilePlus2, FileText, House, Users, type LucideIcon } from 'lucide-react'
 import type { Role } from '../../api/types'
 import type { MessageKey } from '../../i18n/en'
 
@@ -20,10 +20,16 @@ export const navigation: Record<Role, NavItem[]> = {
     { to: '/manage/quizzes', label: 'nav.quizzes', icon: ClipboardList, end: true },
     { to: '/manage/quizzes/new', label: 'nav.newQuiz', icon: FilePlus2 },
   ],
-  // The admin oversees every teacher's quizzes; creating one needs a teacher as its owner.
-  ADMIN: [{ to: '/manage/quizzes', label: 'nav.allQuizzes', icon: ClipboardList, end: true }],
+  ADMIN: [
+    { to: '/admin', label: 'nav.home', icon: House, end: true },
+    { to: '/admin/users', label: 'nav.users', icon: Users },
+    { to: '/manage/quizzes', label: 'nav.allQuizzes', icon: ClipboardList, end: true },
+    { to: '/manage/quizzes/new', label: 'nav.newQuiz', icon: FilePlus2 },
+  ],
 }
 
+const homes: Record<Role, string> = { STUDENT: '/student', TEACHER: '/manage/quizzes', ADMIN: '/admin' }
+
 export function homePath(role: Role): string {
-  return role === 'STUDENT' ? '/student' : '/manage/quizzes'
+  return homes[role]
 }
