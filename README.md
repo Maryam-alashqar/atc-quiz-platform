@@ -45,8 +45,8 @@ Each student can take each quiz **once**, so use a different student for each tr
 
 **Suggested walk-through**
 1. Sign in as `s10a-05`. Open *English Grammar: Weekly Review*, start it, answer a few questions, **reload the page** (the timer and answers survive), then submit.
-2. Sign in as `teacher-english` and open that quiz's results, or download them as CSV.
-3. Sign in as `teacher-math` and create a quiz. Try publishing it incomplete to see the checks.
+2. Sign in as `teacher-english`. The dashboard shows how many have finished the quiz and how many haven't started. Open it to see exactly who hasn't, or download the results as CSV.
+3. Sign in as `teacher-math`. Look at *My Students*, then create a quiz for **named students** (for example two students from 10B). Try publishing it incomplete to see the checks. Then sign in as one of those students and as a classmate who wasn't named: only the named student sees it.
 4. Sign in as `admin` and look at the dashboard, then add a student under *Users* and sign in with the details it shows.
 
 Use the language button to switch between العربية and English. Try it at phone width.
@@ -100,8 +100,8 @@ npm run dev                 # app on http://localhost:5173 (proxies /api to :300
 
 | Command | What it covers |
 | --- | --- |
-| `cd backend && npm test` | Scoring, timing, CSV validation, password hashing, participation statistics, result CSV escaping |
-| `cd backend && npm run test:e2e` | The HTTP API against real PostgreSQL: auth and roles, quiz rules and locks, one attempt per student (including concurrent starts), deadlines and grace period, negative marking, answer-key redaction, ownership, admin accounts and overview |
+| `cd backend && npm test` | Scoring, timing, CSV validation, password hashing, participation and follow-up statistics, result CSV escaping |
+| `cd backend && npm run test:e2e` | The HTTP API against real PostgreSQL: auth and roles, quiz rules and locks, one attempt per student (including concurrent starts), deadlines and grace period, negative marking, answer-key redaction, ownership, named-student quizzes (a classmate who wasn't named can't see or start one), rosters, dashboards, admin accounts |
 | `cd backend && npm run test:db` | The CSV importer against PostgreSQL: concurrent imports, repeat imports, rollback |
 | `cd frontend && npm test` | Server-clock countdown, Amman-time conversion, the answer-save queue (retries, coalescing), quiz form validation and conversion, sign-out |
 
@@ -115,14 +115,14 @@ backend/            NestJS API
   src/auth          cookie JWT sessions, role guards, login rate limit
   src/quizzes       teacher/admin quiz management and publishing rules
   src/attempts      timed attempts, answer saving, scoring
-  src/results       per-quiz results and CSV export
-  src/users         admin account management
-  src/overview      admin dashboard statistics
+  src/results       per-quiz results, who has not started, CSV export
+  src/users         admin account management, student lookup
+  src/overview      admin and teacher dashboards, My Students
   src/data          CSV parser, importer and CLI (seed/import)
   test/             e2e tests against PostgreSQL
   docs/             API notes per feature
 frontend/           React app (Vite, Tailwind), served by nginx in Docker
-  src/features      student, manage (teacher/admin quizzes), admin, auth
+  src/features      student, manage (teacher dashboard, quizzes, students), admin, auth
   src/lib           time, answer queue, password generator (pure, tested)
   src/i18n          English and Arabic dictionaries
 docker-compose.yml  postgres + backend + frontend

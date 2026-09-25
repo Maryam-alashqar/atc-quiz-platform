@@ -7,7 +7,7 @@ I used AI coding agents for most of the implementation. I set the scope, made th
 | Tool | Used for |
 | --- | --- |
 | **OpenAI Codex** | The backend: Prisma schema and migration, CSV importer and seed, cookie/JWT authentication and role guards, quiz management and publishing rules, timed attempts and scoring, results and CSV export, with their tests and `backend/docs/`. |
-| **Claude Code** (Claude Opus) | Reviewing the brief and my scope document, an independent check of the Codex backend, the whole React frontend, the admin features (account management, dashboard), per-account login rate limiting, Docker Compose, and the final documentation. |
+| **Claude Code** (Claude Opus) | Reviewing the brief and my scope document, an independent check of the Codex backend, the whole React frontend, the admin features (account management, dashboard), the teacher follow-up features (dashboard, who has not started, My Students, quizzes for named students), per-account login rate limiting, Docker Compose, and the final documentation. |
 | **Prisma agent skills** | Prisma's official reference skills (`prisma/skills`, see `backend/skills-lock.json`), installed while setting up Prisma. The installer writes a copy for each supported agent, which is why `backend/.agents/`, `backend/.claude/skills/` and `backend/.windsurf/` exist. Windsurf itself was not used. |
 
 ## How I directed the work
@@ -23,11 +23,16 @@ I used AI coding agents for most of the implementation. I set the scope, made th
 2. **Backend before frontend, one stage per branch.** I gave Codex the agreed scope document and had it implement the backend stages in order: schema, import, auth, quizzes, attempts, results. Each stage was built on its own `feat/...` branch. I reviewed it and ran its tests, then merged it with `--no-ff`, so the history shows each step.
 3. **Independent check before building on it.** Before starting the frontend, I had Claude Code run every backend test suite and walk through the API as a student, teacher and admin. It also tried abuse cases: another class's quiz, a cross-question option ID, a forged score, a second start, another teacher's quiz. All were rejected correctly.
 4. **A design to aim at, not a spec to copy.** I supplied a dashboard mock-up. I told Claude Code to follow the look, but not to fake anything the data can't support. It removed rank, search, notifications and the extra menu items instead of hard-coding numbers, and noted this in DECISIONS.md.
-5. **Testing it myself as a user.** I clicked through each stage in the browser and reported problems back (see below). Some features came from that testing. Account management and the admin dashboard were my requests: with no sign-up and ready-made accounts, the admin needs a way to add students and teachers, and the admin home should match the design.
+5. **Testing it myself as a user.** I clicked through each stage in the browser and reported problems back (see below). Some features came from that testing. Several features were my requests after trying the app:
+   - account management and the admin dashboard: with no sign-up and ready-made accounts, the admin needs a way to add students and teachers
+   - a teacher dashboard that shows who has and hasn't taken each quiz, and a list of the teacher's students
+   - quizzes for a group or named students, not only whole classes
 6. **I made the product decisions.** When there was a real choice, the agent asked and I chose:
    - no forced password change on first login
    - no account deactivation for now
    - how the admin's quiz ownership works
+   - that teachers cannot move students between classes (it affects every teacher), so class changes stay with the admin
+   - to build named-student quizzes now rather than defer them
    - when to push and merge
 
 ## Where the AI got it wrong, and how it was caught
@@ -42,19 +47,20 @@ I used AI coding agents for most of the implementation. I set the scope, made th
 | The student dashboard was **wider than a phone screen**: grid items defaulted to their content width. | Screenshots at 390px | `min-w-0` on cards. |
 | A first draft of DECISIONS.md said the admin dashboard grades expired attempts. It doesn't. | Checking the text against the code | Corrected. |
 | An unclear error when the import folder path was wrong. | Testing the documented import command in Docker | The CLI now names the missing file. |
+| After adding the quiz-audience migration, the importer's database test failed: it applied only the first migration by name. | Running every suite after the schema change, not just the new tests | The test applies all migrations in order. |
 
 ## How the output was checked
 
 - **Automated tests**, run after every stage:
-  - Backend: 71 unit tests, 170 end-to-end API tests against real PostgreSQL (each file in its own throwaway schema), and 4 database tests for the importer.
-  - Frontend: 44 unit tests.
-  - The most important checks are in the backend e2e suite: one attempt per student including concurrent starts, deadlines and the grace period, scoring with and without negative marking, answer keys never sent to students, and teacher ownership.
+  - Backend: 76 unit tests, 185 end-to-end API tests against real PostgreSQL (each file in its own throwaway schema), and 4 database tests for the importer.
+  - Frontend: 46 unit tests.
+  - The most important checks are in the backend e2e suite: one attempt per student including concurrent starts, deadlines and the grace period, scoring with and without negative marking, answer keys never sent to students, teacher ownership, and named-student quizzes staying invisible to classmates who weren't named.
 - **Typecheck and lint** on both apps before each commit.
 - **Real browser runs.** Claude Code drove Microsoft Edge (headless, via puppeteer) with scripts that:
   - sign in as each role
   - take a quiz and reload the page mid-quiz, to confirm the timer and answers survive
   - let a one-minute quiz run out, to confirm auto-submit and the score
-  - create quizzes and accounts
+  - create quizzes and accounts, including a quiz for one named student, then confirm a classmate who was not named cannot see or start it
   - sign out
 
   It took screenshots at phone (390px) and desktop (1280px) widths in both Arabic and English, and checked them for layout problems.

@@ -13,6 +13,7 @@ Timed multiple-choice quizzes for a tutoring centre. Roles: STUDENT, TEACHER, AD
 
 - **The server decides.** Scoring, deadlines, availability and ownership are enforced in the API. The UI only mirrors them. Never accept scores, points or deadlines from the client.
 - **Answer keys never reach students.** Student responses are explicit projections without `isCorrect`, even after grading.
+- **Who a quiz is for.** Every student-facing query uses `assignedTo()` (in `attempts.service.ts`): whole classes, or named students. Counts of expected students use `meantFor()` in `overview-stats.ts`. Don't add a second version of either.
 - **One attempt per student per quiz.** This is a database unique key plus locks. Keep new attempt logic inside the existing lock helpers.
 - **Time.** Deadlines come from the server (`deadlineAt`, `serverTime`). The UI shows Asia/Amman time. Decimals travel as strings.
 - **Grading stays stable.** After the first attempt starts, only a quiz's title and description may change.
