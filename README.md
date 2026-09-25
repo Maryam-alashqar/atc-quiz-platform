@@ -46,10 +46,10 @@ Each student can take each quiz **once**, so use a different student for each tr
 **Suggested walk-through**
 1. Sign in as `s10a-05`. Open *English Grammar: Weekly Review*, start it, answer a few questions, **reload the page** (the timer and answers survive), then submit.
 2. Sign in as `teacher-english`. The dashboard shows how many have finished the quiz and how many haven't started. Open it to see exactly who hasn't, or download the results as CSV.
-3. Sign in as `teacher-math`. Look at *My Students*, then create a quiz for **named students** (for example two students from 10B). Try publishing it incomplete to see the checks. Then sign in as one of those students and as a classmate who wasn't named: only the named student sees it.
+3. Sign in as `teacher-math`. Look at *My Students*, then create a quiz for **named students** (for example two students from 10B). Try publishing it incomplete to see the checks, or use *Duplicate* on an existing quiz to reuse it for next week. Then sign in as one of those students and as a classmate who wasn't named: only the named student sees it.
 4. Sign in as `admin` and look at the dashboard, then add a student under *Users* and sign in with the details it shows.
 
-Use the language button to switch between العربية and English. Try it at phone width.
+Use the language button to switch between العربية and English. Try it at phone width. Any user can change their own password from the key icon or their name at the top (*My account*).
 
 ## Sample data
 
