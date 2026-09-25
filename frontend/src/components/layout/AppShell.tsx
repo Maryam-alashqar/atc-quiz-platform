@@ -1,5 +1,5 @@
-import { Languages, LogOut } from 'lucide-react'
-import { NavLink, Outlet } from 'react-router'
+import { KeyRound, Languages, LogOut } from 'lucide-react'
+import { Link, NavLink, Outlet } from 'react-router'
 import { useLogout } from '../../api/auth'
 import type { User } from '../../api/types'
 import { useI18n } from '../../i18n/context'
@@ -27,7 +27,7 @@ function UserChip({ user }: { user: User }) {
   const { t } = useI18n()
   const role = t(`role.${user.role}`)
   return (
-    <div className="flex min-w-0 items-center gap-3">
+    <Link to="/account" title={t('account.title')} className="flex min-w-0 items-center gap-3 rounded-full py-1 pe-1 ps-3 hover:bg-surface">
       <Avatar name={user.name} />
       <div className="hidden min-w-0 leading-tight sm:block">
         <p className="truncate font-semibold text-ink">{user.name}</p>
@@ -35,7 +35,21 @@ function UserChip({ user }: { user: User }) {
           {user.className ? `${user.className} · ${role}` : role}
         </p>
       </div>
-    </div>
+    </Link>
+  )
+}
+
+function AccountLink({ className = '' }: { className?: string }) {
+  const { t } = useI18n()
+  return (
+    <Link
+      to="/account"
+      aria-label={t('account.changePassword')}
+      title={t('account.changePassword')}
+      className={`grid size-11 place-items-center rounded-full ${className}`}
+    >
+      <KeyRound className="size-5" aria-hidden="true" />
+    </Link>
   )
 }
 
@@ -89,7 +103,10 @@ function Sidebar({ user }: { user: User }) {
       </nav>
       <div className="relative z-10 mt-auto flex items-center justify-between px-4 pb-4">
         <LanguageToggle className="text-sky hover:bg-white/10 hover:text-white" />
-        <LogoutButton className="text-sky hover:bg-white/10 hover:text-white" />
+        <div className="flex">
+          <AccountLink className="text-sky hover:bg-white/10 hover:text-white" />
+          <LogoutButton className="text-sky hover:bg-white/10 hover:text-white" />
+        </div>
       </div>
     </aside>
   )
@@ -105,6 +122,7 @@ function MobileTopBar({ user }: { user: User }) {
       </div>
       <div className="flex items-center gap-1">
         <LanguageToggle className="text-primary hover:bg-sky-soft" />
+        <AccountLink className="text-primary hover:bg-sky-soft" />
         <LogoutButton className="text-primary hover:bg-sky-soft" />
         <Avatar name={user.name} className="size-10 text-sm" />
       </div>

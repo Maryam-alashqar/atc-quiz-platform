@@ -389,6 +389,33 @@ export const en = {
   'picker.hint': 'Search for a student, or pick a class to list its students.',
   'picker.noMatches': 'No more matching students.',
   'picker.addAll': 'Add all {n}',
+
+  'title.quiz': 'Quiz',
+  'title.result': 'Your result',
+
+  'editor.duplicate': 'Duplicate',
+  'editor.copySuffix': '(copy)',
+  'editor.copyNotice': 'A new quiz: set its dates, review it, then save or publish. Copied from',
+  'editor.leaveTitle': 'Leave without saving?',
+  'editor.leaveBody': 'You have changes that haven’t been saved. If you leave now they will be lost.',
+  'editor.stay': 'Stay and save',
+  'editor.leave': 'Leave anyway',
+
+  'player.warnMinutes': '{n} min left: check your answers and submit',
+  'player.leaveTitle': 'Leave the quiz?',
+  'player.leaveBody': 'Your answers are saved and you can come back to finish, but the timer keeps running: {time} left.',
+  'player.leaveConfirm': 'Leave',
+
+  'account.title': 'My account',
+  'account.changePassword': 'Change password',
+  'account.hint': 'Replace the first password you were given with one only you know. You stay signed in on this device.',
+  'account.current': 'Current password',
+  'account.confirm': 'Repeat the new password',
+  'account.save': 'Change password',
+  'account.changed': 'Your password has been changed. Use the new one next time you sign in.',
+  'account.mismatch': 'The two new passwords don’t match.',
+  'account.same': 'The new password must be different from the current one.',
+  'account.wrongCurrent': 'The current password is not correct.',
 } as const
 
 export type MessageKey = keyof typeof en

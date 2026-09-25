@@ -16,6 +16,8 @@ export class LoginThrottlerGuard extends ThrottlerGuard {
       typeof body?.username === 'string'
         ? body.username.trim().toLowerCase().slice(0, 100)
         : '';
-    return `${String(req.ip)}|${username}`;
+    // Signed-in requests (password change) are limited per account instead.
+    const userId = (req.user as { id?: string } | undefined)?.id;
+    return userId ? `user|${userId}` : `${String(req.ip)}|${username}`;
   }
 }

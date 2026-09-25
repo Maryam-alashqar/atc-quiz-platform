@@ -1,5 +1,6 @@
 import { createBrowserRouter, Outlet } from 'react-router'
 import { AppShell } from '../components/layout/AppShell'
+import { AccountPage } from '../features/account/AccountPage'
 import { AdminDashboardPage } from '../features/admin/AdminDashboardPage'
 import { UsersPage } from '../features/admin/UsersPage'
 import { LoginPage } from '../features/auth/LoginPage'
@@ -16,70 +17,139 @@ import { QuizzesPage } from '../features/student/QuizzesPage'
 import { ResultsPage } from '../features/student/ResultsPage'
 import { RequireAuth, RequireRole } from './guards'
 import { HomeRedirect, ManageHome } from './HomeRedirect'
+import { RootLayout } from './RootLayout'
 
 export const router = createBrowserRouter([
-  { path: '/', element: <HomeRedirect /> },
-  { path: '/login', element: <LoginPage /> },
-  // The quiz player is full-screen: no sidebar or tab bar to tap by accident mid-quiz.
   {
-    path: '/student/attempts/:id',
-    element: (
-      <RequireAuth>
-        {() => (
-          <RequireRole roles={['STUDENT']}>
-            <QuizPlayerPage />
-          </RequireRole>
-        )}
-      </RequireAuth>
-    ),
-  },
-  {
-    element: <RequireAuth>{(user) => <AppShell user={user} />}</RequireAuth>,
+    element: <RootLayout />,
     children: [
+      { path: '/', element: <HomeRedirect /> },
       {
-        path: 'student',
+        path: '/login',
+        element: <LoginPage />,
+        handle: { title: 'auth.submit' },
+      },
+      // The quiz player is full-screen: no sidebar or tab bar to tap by accident mid-quiz.
+      {
+        path: '/student/attempts/:id',
+        handle: { title: 'title.quiz' },
         element: (
-          <RequireRole roles={['STUDENT']}>
-            <Outlet />
-          </RequireRole>
+          <RequireAuth>
+            {() => (
+              <RequireRole roles={['STUDENT']}>
+                <QuizPlayerPage />
+              </RequireRole>
+            )}
+          </RequireAuth>
         ),
-        children: [
-          { index: true, element: <DashboardPage /> },
-          { path: 'quizzes', element: <QuizzesPage /> },
-          { path: 'quizzes/:id', element: <QuizDetailsPage /> },
-          { path: 'attempts/:id/result', element: <AttemptResultPage /> },
-          { path: 'results', element: <ResultsPage /> },
-        ],
       },
       {
-        path: 'manage',
-        element: (
-          <RequireRole roles={['TEACHER', 'ADMIN']}>
-            <Outlet />
-          </RequireRole>
-        ),
+        element: <RequireAuth>{(user) => <AppShell user={user} />}</RequireAuth>,
         children: [
-          { index: true, element: <ManageHome /> },
-          { path: 'students', element: <MyStudentsPage /> },
-          { path: 'quizzes', element: <QuizListPage /> },
-          { path: 'quizzes/new', element: <QuizEditorPage /> },
-          { path: 'quizzes/:id/edit', element: <QuizEditorPage /> },
-          { path: 'quizzes/:id/results', element: <QuizResultsPage /> },
+          {
+            path: 'student',
+            element: (
+              <RequireRole roles={['STUDENT']}>
+                <Outlet />
+              </RequireRole>
+            ),
+            children: [
+              {
+                index: true,
+                element: <DashboardPage />,
+                handle: { title: 'nav.home' },
+              },
+              {
+                path: 'quizzes',
+                element: <QuizzesPage />,
+                handle: { title: 'nav.myQuizzes' },
+              },
+              {
+                path: 'quizzes/:id',
+                element: <QuizDetailsPage />,
+                handle: { title: 'title.quiz' },
+              },
+              {
+                path: 'attempts/:id/result',
+                element: <AttemptResultPage />,
+                handle: { title: 'title.result' },
+              },
+              {
+                path: 'results',
+                element: <ResultsPage />,
+                handle: { title: 'nav.results' },
+              },
+            ],
+          },
+          {
+            path: 'manage',
+            element: (
+              <RequireRole roles={['TEACHER', 'ADMIN']}>
+                <Outlet />
+              </RequireRole>
+            ),
+            children: [
+              {
+                index: true,
+                element: <ManageHome />,
+                handle: { title: 'nav.home' },
+              },
+              {
+                path: 'students',
+                element: <MyStudentsPage />,
+                handle: { title: 'nav.myStudents' },
+              },
+              {
+                path: 'quizzes',
+                element: <QuizListPage />,
+                handle: { title: 'nav.quizzes' },
+              },
+              {
+                path: 'quizzes/new',
+                element: <QuizEditorPage />,
+                handle: { title: 'nav.newQuiz' },
+              },
+              {
+                path: 'quizzes/:id/edit',
+                element: <QuizEditorPage />,
+                handle: { title: 'editor.editTitle' },
+              },
+              {
+                path: 'quizzes/:id/results',
+                element: <QuizResultsPage />,
+                handle: { title: 'results.teacherTitle' },
+              },
+            ],
+          },
+          {
+            path: 'admin',
+            element: (
+              <RequireRole roles={['ADMIN']}>
+                <Outlet />
+              </RequireRole>
+            ),
+            children: [
+              {
+                index: true,
+                element: <AdminDashboardPage />,
+                handle: { title: 'nav.home' },
+              },
+              {
+                path: 'users',
+                element: <UsersPage />,
+                handle: { title: 'nav.users' },
+              },
+            ],
+          },
+          // Every role: change one's own password.
+          { path: 'account', element: <AccountPage />, handle: { title: 'account.title' } },
+          {
+            path: '*',
+            element: <NotFoundPage />,
+            handle: { title: 'notFound.title' },
+          },
         ],
       },
-      {
-        path: 'admin',
-        element: (
-          <RequireRole roles={['ADMIN']}>
-            <Outlet />
-          </RequireRole>
-        ),
-        children: [
-          { index: true, element: <AdminDashboardPage /> },
-          { path: 'users', element: <UsersPage /> },
-        ],
-      },
-      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ])

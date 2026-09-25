@@ -46,3 +46,10 @@ export function switchSession(queryClient: QueryClient, user: User | null) {
   queryClient.setQueryData(meKey, user)
   queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== meKey[0] })
 }
+
+/** Change one's own password (the current one is required). The session stays signed in. */
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (body: { currentPassword: string; newPassword: string }) => api<void>('POST', '/auth/password', body),
+  })
+}

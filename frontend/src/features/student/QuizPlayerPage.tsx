@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { AlarmClock, ArrowLeft, ArrowRight, Check, CloudOff, LoaderCircle, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router'
+import { Navigate, useNavigate, useParams } from 'react-router'
 import { meKey } from '../../api/auth'
 import { ApiError } from '../../api/client'
 import { saveAnswer, studentKeys, useAttempt, useSubmitAttempt } from '../../api/student'
@@ -124,6 +124,34 @@ function Player({ attempt }: { attempt: Attempt }) {
 
   const remaining = useCountdown(attempt.deadlineAt, () => void finish('timeUp'))
 
+  // A visible heads-up at 5 minutes and at 1 minute left (the timer colour alone is easy to miss).
+  const [warning, setWarning] = useState<number | null>(null)
+  const warnedRef = useRef(new Set<number>())
+  useEffect(() => {
+    if (remaining <= 0 || finishingRef.current) return
+    const threshold = remaining <= 60_000 ? 1 : remaining <= 5 * 60_000 ? 5 : null
+    // Skip a warning the quiz is too short for (a 1-minute quiz would open on "1 min left").
+    const totalMs = Date.parse(attempt.deadlineAt) - Date.parse(attempt.startedAt)
+    if (threshold === null || warnedRef.current.has(threshold) || totalMs <= threshold * 60_000) return
+    warnedRef.current.add(threshold)
+    if (threshold === 1) warnedRef.current.add(5)
+    setWarning(Math.ceil(remaining / 60_000))
+  }, [remaining, attempt.deadlineAt, attempt.startedAt])
+  useEffect(() => {
+    if (warning === null) return
+    const timer = setTimeout(() => setWarning(null), 8000)
+    return () => clearTimeout(timer)
+  }, [warning])
+
+  // Leaving mid-quiz is allowed (the attempt can be resumed), but the timer keeps running.
+  const [leaving, setLeaving] = useState(false)
+  const [exiting, setExiting] = useState(false)
+  async function leave() {
+    setExiting(true)
+    await queue.flush()
+    navigate('/student')
+  }
+
   // Warn before closing the tab only while an answer is still unsaved.
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
@@ -148,14 +176,15 @@ function Player({ attempt }: { attempt: Attempt }) {
     <div className="min-h-dvh bg-ivory">
       <header className="sticky top-0 z-20 bg-surface/95 shadow-card backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2.5">
-          <Link
-            to="/student"
+          <button
+            type="button"
+            onClick={() => setLeaving(true)}
             aria-label={t('player.exit')}
             title={t('player.exit')}
             className="grid size-11 shrink-0 place-items-center rounded-full text-muted hover:bg-ivory hover:text-primary"
           >
             <X className="size-5" aria-hidden="true" />
-          </Link>
+          </button>
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold text-ink">
               <bdi>{attempt.quiz.title}</bdi>
@@ -307,6 +336,34 @@ function Player({ attempt }: { attempt: Attempt }) {
         <p>{t('player.confirmAnswered', { a: answeredCount, n: questions.length })}</p>
         {answeredCount < questions.length && <p className="mt-2">{t('player.confirmUnanswered')}</p>}
         <p className="mt-2">{t('player.confirmFinal')}</p>
+      </Dialog>
+
+      {warning !== null && (
+        <div role="alert" className="fixed inset-x-0 top-20 z-30 flex justify-center px-4">
+          <div className="flex items-center gap-3 rounded-2xl bg-gold px-5 py-3 font-semibold text-ink shadow-lift">
+            <AlarmClock className="size-5" aria-hidden="true" />
+            {t('player.warnMinutes', { n: warning })}
+          </div>
+        </div>
+      )}
+
+      <Dialog
+        open={leaving}
+        onClose={() => setLeaving(false)}
+        title={t('player.leaveTitle')}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setLeaving(false)}>
+              {t('player.keepWorking')}
+            </Button>
+            <Button onClick={() => void leave()} disabled={exiting}>
+              {exiting && <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />}
+              {t('player.leaveConfirm')}
+            </Button>
+          </>
+        }
+      >
+        <p>{t('player.leaveBody', { time: formatCountdown(remaining) })}</p>
       </Dialog>
 
       {finishing && (
