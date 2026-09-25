@@ -7,7 +7,7 @@ I used AI coding agents for most of the implementation. I set the scope, made th
 | Tool | Used for |
 | --- | --- |
 | **OpenAI Codex** | The backend: Prisma schema and migration, CSV importer and seed, cookie/JWT authentication and role guards, quiz management and publishing rules, timed attempts and scoring, results and CSV export, with their tests and `backend/docs/`. |
-| **Claude Code** (Claude Opus) | Reviewing the brief and my scope document, an independent check of the Codex backend, the whole React frontend, the admin features (account management, dashboard), the teacher follow-up features (dashboard, who has not started, My Students, quizzes for named students), per-account login rate limiting, Docker Compose, and the final documentation. |
+| **Claude Code** (Claude Opus) | Reviewing the brief and my scope document, an independent check of the Codex backend, the whole React frontend, the admin features (account management, dashboard), the teacher follow-up features (dashboard, who has not started, My Students, quizzes for named students), the usability improvements (unsaved-work guard, quiz exit and time warnings, tab titles, duplicating a quiz, changing one's own password), per-account login rate limiting, Docker Compose, and the final documentation. |
 | **Prisma agent skills** | Prisma's official reference skills (`prisma/skills`, see `backend/skills-lock.json`), installed while setting up Prisma. The installer writes a copy for each supported agent, which is why `backend/.agents/`, `backend/.claude/skills/` and `backend/.windsurf/` exist. Windsurf itself was not used. |
 
 ## How I directed the work
@@ -27,6 +27,7 @@ I used AI coding agents for most of the implementation. I set the scope, made th
    - account management and the admin dashboard: with no sign-up and ready-made accounts, the admin needs a way to add students and teachers
    - a teacher dashboard that shows who has and hasn't taken each quiz, and a list of the teacher's students
    - quizzes for a group or named students, not only whole classes
+   - a set of usability improvements I had already written down and deferred: a warning before a teacher loses unsaved edits, a confirmation and time warnings when leaving a quiz, page titles in the browser tab, duplicating a quiz for the next week, and letting every user change their own password. I asked for them to be done one stage at a time, each in its own commit.
 6. **I made the product decisions.** When there was a real choice, the agent asked and I chose:
    - no forced password change on first login
    - no account deactivation for now
@@ -47,13 +48,14 @@ I used AI coding agents for most of the implementation. I set the scope, made th
 | The student dashboard was **wider than a phone screen**: grid items defaulted to their content width. | Screenshots at 390px | `min-w-0` on cards. |
 | A first draft of DECISIONS.md said the admin dashboard graded expired attempts, which the code didn't do at the time. | Checking the text against the code | Corrected. The dashboards were later changed to grade overdue attempts before reporting, and the text was updated to match. |
 | An unclear error when the import folder path was wrong. | Testing the documented import command in Docker | The CLI now names the missing file. |
+| A **new quiz could not be saved as a draft** until every question was complete. The editor sent the empty starter question, and the API rejected the empty text. | Claude Code's browser test of the unsaved-edits warning, which saved a fresh draft | Blank questions and empty options are left out of drafts, and a question with options but no text gets a clear message. Regression tests added. |
 | After adding the quiz-audience migration, the importer's database test failed: it applied only the first migration by name. | Running every suite after the schema change, not just the new tests | The test applies all migrations in order. |
 
 ## How the output was checked
 
 - **Automated tests**, run after every stage:
-  - Backend: 76 unit tests, 185 end-to-end API tests against real PostgreSQL (each file in its own throwaway schema), and 4 database tests for the importer.
-  - Frontend: 46 unit tests.
+  - Backend: 76 unit tests, 192 end-to-end API tests against real PostgreSQL (each file in its own throwaway schema), and 4 database tests for the importer.
+  - Frontend: 52 unit tests.
   - The most important checks are in the backend e2e suite: one attempt per student including concurrent starts, deadlines and the grace period, scoring with and without negative marking, answer keys never sent to students, teacher ownership, and named-student quizzes staying invisible to classmates who weren't named.
 - **Typecheck and lint** on both apps before each commit.
 - **Real browser runs.** Claude Code drove Microsoft Edge (headless, via puppeteer) with scripts that:
@@ -61,6 +63,8 @@ I used AI coding agents for most of the implementation. I set the scope, made th
   - take a quiz and reload the page mid-quiz, to confirm the timer and answers survive
   - let a one-minute quiz run out, to confirm auto-submit and the score
   - create quizzes and accounts, including a quiz for one named student, then confirm a classmate who was not named cannot see or start it
+  - leave the quiz editor with unsaved changes, save a fresh draft, and duplicate a quiz
+  - change a password (wrong current password, mismatch, success, then sign in with the new one)
   - sign out
 
   It took screenshots at phone (390px) and desktop (1280px) widths in both Arabic and English, and checked them for layout problems.

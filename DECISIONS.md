@@ -54,12 +54,15 @@ React + TypeScript (Vite, Tailwind) for the frontend, NestJS + TypeScript for th
 | **Arabic and English interface** | The UI switches between Arabic (RTL) and English. Each quiz has its own language: an Arabic quiz renders right-to-left, with أ ب ج د option letters, inside either interface. |
 | **CSV export of results** | For teachers who keep grades in Excel. It is UTF-8 with a BOM so Arabic names open correctly, and cells that could run as spreadsheet formulas are neutralised. |
 | **Quiz editing locks** | Once any student has started a quiz, only its title and description can change. Otherwise the points and answers could shift under students who already submitted. |
+| **Duplicate a quiz** | Weekly quizzes are often last week's with small changes. The copy keeps the questions, marking and audience but clears the dates, and saving creates a new quiz. The original and its results are untouched. |
+| **Change your own password** | Everyone starts with a password the admin handed out. The current password is required before a new one is accepted, and attempts are rate-limited per account. |
+| **Nothing lost by accident** | The editor asks before leaving with unsaved changes. The quiz page asks before leaving and says the timer keeps running, and it warns at 5 minutes and 1 minute left. Each page names the browser tab, which helps students with several tabs open. |
 | **Login rate limit per account** | Limiting by IP alone would lock a whole class out when the quiz starts, because everyone on the centre's Wi-Fi shares one public IP. The limit is per IP *and* username. |
 
 ## Deliberately left out
 
 - **XLSX upload UI.** A CSV import command exists (`npm run db:import -- <folder>`). A spreadsheet upload screen with column mapping is next week's work.
-- **Password reset by email, and forcing a password change on first login.** The admin hands out and resets passwords, which covers a small centre where everyone is known by name.
+- **Password reset by email, and forcing a password change on first login.** The admin hands out and resets passwords, and every user can change their own. That covers a small centre where everyone is known by name.
 - **Deleting or deactivating accounts.** Attempts reference the student, and old results must stay intact. Deactivation is the right fix. Deletion isn't.
 - **Teachers moving students between classes.** A student's class decides the quizzes of every teacher, so class changes stay with the admin. A teacher who wants a quiz for particular students names them on the quiz instead.
 - **Retakes, question banks, random question order, timed-per-question quizzes.**

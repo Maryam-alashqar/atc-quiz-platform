@@ -73,6 +73,9 @@ The brief says what Nour wants to see ("how the students did"), but not how a sm
 | PR-06 | A quiz is for **whole classes** or for **named students** from any class (for example a catch-up quiz). Only those students can see or take it | ✅ |
 | PR-07 | Students see upcoming quizzes, not only open ones, so they can plan | ✅ |
 | PR-08 | Signing in must not lock out a whole class that shares the centre's Wi-Fi (one public IP) | ✅ |
+| PR-09 | A teacher can duplicate a quiz to reuse it for another week (new dates, same content) | ✅ |
+| PR-10 | Every user can change their own password, after entering the current one | ✅ |
+| PR-11 | Work is not lost by accident: warn before leaving the editor with unsaved changes; confirm leaving a quiz and say the timer keeps running; warn at 5 and 1 minutes left; name each page in the browser tab | ✅ |
 
 ## 4. Gaps in the brief and decisions taken
 
@@ -146,7 +149,7 @@ Each case below is enforced on the server and covered by an automated test.
 All routes are under `/api`.
 
 ```
-POST /auth/login | POST /auth/logout | GET /auth/me
+POST /auth/login | POST /auth/logout | GET /auth/me | POST /auth/password (change own password)
 GET  /health
 
 Student
@@ -197,9 +200,9 @@ Loaded from `backend/prisma/data/*.csv` through the importer. The data set has 3
 
 | Area | Screens |
 | --- | --- |
-| Shared | Login · App shell with role-based navigation · Language/direction toggle · Loading, empty and error states |
-| Student | Dashboard (open / upcoming / completed) · Quiz details + start confirmation · Quiz player (one question per screen on phones, question navigator, save indicator, sticky countdown, auto-submit at zero, resume after refresh) · Result page (score + percentage) |
-| Teacher | Dashboard (quizzes to follow, participation by class, latest submissions) · My Students (progress per student, filters for who is behind) · Quiz list with status · Quiz editor (details, whole classes or named students with a searchable picker, window, duration, marking, 15 questions × 4 options, points; read-only fields once attempts exist) · Publish · Results: Students tab (who has not started) and Attempts tab (scores) + CSV export |
+| Shared | Login · App shell with role-based navigation · Language/direction toggle · My account (change password) · Tab title per page · Loading, empty and error states |
+| Student | Dashboard (open / upcoming / completed) · Quiz details + start confirmation · Quiz player (one question per screen on phones, question navigator, save indicator, sticky countdown, auto-submit at zero, resume after refresh, 5- and 1-minute warnings, confirm before leaving) · Result page (score + percentage) |
+| Teacher | Dashboard (quizzes to follow, participation by class, latest submissions) · My Students (progress per student, filters for who is behind) · Quiz list with status (edit, duplicate, results) · Quiz editor (warns before losing unsaved changes; details, whole classes or named students with a searchable picker, window, duration, marking, 15 questions × 4 options, points; read-only fields once attempts exist) · Publish · Results: Students tab (who has not started) and Attempts tab (scores) + CSV export |
 | Admin | Dashboard (participation by class and teacher, quizzes to follow, quiz status, latest submissions) · Users (add, edit, reset password) · All quizzes and results · Create a quiz for a chosen teacher |
 
 The API is the only source of truth for time: the countdown uses `deadlineAt` and `serverTime` from the API, so a wrong clock on the device cannot extend the quiz.
@@ -223,7 +226,8 @@ The API is the only source of truth for time: the countdown uses `deadlineAt` an
 | 12 | Admin: account management and centre dashboard (PR-01, PR-02) | ✅ |
 | 13 | Teacher follow-up: dashboard, per-quiz roster, My Students, named-student quizzes (PR-03 to PR-06) | ✅ |
 | 14 | Full `docker compose up --build` (db + backend + frontend) | ✅ |
-| 15 | Root README, DECISIONS.md, AI_USAGE.md final pass | ✅ |
+| 15 | Usability: unsaved-work guard, quiz exit and time warnings, tab titles, duplicate quiz, change own password (PR-09 to PR-11) | ✅ |
+| 16 | Root README, DECISIONS.md, AI_USAGE.md final pass | ✅ |
 
 ## 12. Deliverables (byThursday)
 
