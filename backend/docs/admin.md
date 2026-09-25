@@ -52,3 +52,19 @@ results. The calculation is a pure function (`src/overview/overview-stats.ts`) w
 npm test -- src/overview
 npm run test:e2e -- test/admin-users.e2e-spec.ts test/admin-overview.e2e-spec.ts
 ```
+
+## Importing spreadsheets from the browser
+
+`POST /api/import` (multipart, field `files`) accepts one Excel workbook (`.xlsx`) with the sheets
+`classes`, `users`, `quizzes` and `questions` (names are case-insensitive), or the four CSV files
+`classes.csv`, `users.csv`, `quizzes.csv` and `questions.csv`. Columns are the same as for the
+[command-line importer](../prisma/data/README.md), which is unchanged and shares all validation.
+
+- `?preview=true` runs the whole import inside a transaction and rolls it back, so the summary
+  (created / skipped per table) and any conflict are exactly what a real import would produce,
+  with nothing saved. Password hashing is skipped in a preview.
+- Mistakes are 400s that name the sheet and row (`Sheet "users", row 3: …`). Values and
+  passwords are never echoed.
+- Excel cells are read as typed: numbers as written, formulas as their result, and date cells
+  as Amman wall-clock time. Text dates must include an offset, as in the CSV files.
+- Limits: 5 MB per file and 5,000 rows per sheet. Files stay in memory and are not written to disk.

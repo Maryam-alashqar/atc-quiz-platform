@@ -29,8 +29,9 @@ export async function api<T>(method: Method, path: string, body?: unknown): Prom
       method,
       // Same-origin cookie auth; the browser adds the Origin header the API checks.
       credentials: 'same-origin',
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      // FormData (file uploads) sets its own multipart Content-Type with the boundary.
+      headers: body === undefined || body instanceof FormData ? undefined : { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
     })
   } catch (error) {
     throw new NetworkError(error instanceof Error ? error.message : 'Network error')

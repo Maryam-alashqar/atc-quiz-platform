@@ -143,3 +143,36 @@ export function useResetPassword() {
     api<void>('POST', `/users/${id}/password`, { password }),
   )
 }
+
+export interface ImportSummary {
+  classesCreated: number
+  usersCreated: number
+  quizzesCreated: number
+  questionsCreated: number
+  optionsCreated: number
+  classesSkipped: number
+  usersSkipped: number
+  quizzesSkipped: number
+}
+
+export interface ImportResult {
+  preview: boolean
+  source: 'xlsx' | 'csv'
+  summary: ImportSummary
+}
+
+/** Check (preview) or import one workbook or the four CSV files. */
+export function useImport() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ files, preview }: { files: File[]; preview: boolean }) => {
+      const form = new FormData()
+      for (const file of files) form.append('files', file)
+      return api<ImportResult>('POST', `/import${preview ? '?preview=true' : ''}`, form)
+    },
+    onSuccess: (result) => {
+      // New classes, people and quizzes show up everywhere.
+      if (!result.preview) void queryClient.invalidateQueries()
+    },
+  })
+}
