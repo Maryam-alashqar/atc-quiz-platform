@@ -8,12 +8,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import type { CookieOptions, Response } from 'express';
 import type { Environment } from '../config/environment.js';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { CurrentUser, Public } from './auth.decorators.js';
+import { LoginThrottlerGuard } from './guards/login-throttler.guard.js';
 import { AUTH_COOKIE, type AuthUser } from './auth.types.js';
 
 @Controller('auth')
@@ -35,7 +35,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(200)
-  @UseGuards(ThrottlerGuard)
+  @UseGuards(LoginThrottlerGuard)
   async login(
     @Body() body: LoginDto,
     @Res({ passthrough: true }) response: Response,

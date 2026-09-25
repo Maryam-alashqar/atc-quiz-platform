@@ -6,6 +6,8 @@ export interface Environment {
   FRONTEND_ORIGIN: string;
   PORT: number;
   LOGIN_RATE_LIMIT: number;
+  /** Behind a known reverse proxy (Docker nginx), read the client IP from X-Forwarded-For. */
+  TRUST_PROXY: boolean;
 }
 
 export function validateEnvironment(
@@ -73,6 +75,9 @@ export function validateEnvironment(
       'must be an exact HTTP(S) origin without a path or trailing slash (HTTPS in production).',
     );
   }
+  const trustProxy = String(input.TRUST_PROXY ?? 'false');
+  if (!['true', 'false'].includes(trustProxy))
+    fail('TRUST_PROXY', 'must be true or false.');
   return {
     NODE_ENV: nodeEnv as Environment['NODE_ENV'],
     DATABASE_URL: databaseUrl,
@@ -81,5 +86,6 @@ export function validateEnvironment(
     JWT_TTL_SECONDS: number('JWT_TTL_SECONDS', 3600, 86_400),
     PORT: number('PORT', 3000, 65_535),
     LOGIN_RATE_LIMIT: number('LOGIN_RATE_LIMIT', 10, 1000),
+    TRUST_PROXY: trustProxy === 'true',
   };
 }

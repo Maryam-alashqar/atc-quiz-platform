@@ -30,7 +30,8 @@ Startup fails immediately if required configuration is missing or invalid.
 | NODE_ENV | `development` by default, or `test` / `production` |
 | PORT | API port, default `3000` |
 | JWT_TTL_SECONDS | Session lifetime, default `3600`, maximum `86400` |
-| LOGIN_RATE_LIMIT | Login requests per client IP per minute, default `10` |
+| LOGIN_RATE_LIMIT | Login attempts per minute for one username from one client IP, default `10` (per account, so a class on shared Wi-Fi is not locked out) |
+| TRUST_PROXY | `true` only behind a known reverse proxy (Docker nginx): the client IP is read from `X-Forwarded-For`. Default `false` |
 
 Production requires an HTTPS frontend origin and sets Secure on the cookie.
 Development uses HTTP on localhost. Frontend/API deployment must remain same-site
