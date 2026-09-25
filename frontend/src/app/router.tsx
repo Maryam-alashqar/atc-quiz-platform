@@ -1,5 +1,6 @@
 import { createBrowserRouter, Outlet } from 'react-router'
 import { AppShell } from '../components/layout/AppShell'
+import { AccountPage } from '../features/account/AccountPage'
 import { AdminDashboardPage } from '../features/admin/AdminDashboardPage'
 import { UsersPage } from '../features/admin/UsersPage'
 import { LoginPage } from '../features/auth/LoginPage'
@@ -140,6 +141,8 @@ export const router = createBrowserRouter([
               },
             ],
           },
+          // Every role: change one's own password.
+          { path: 'account', element: <AccountPage />, handle: { title: 'account.title' } },
           {
             path: '*',
             element: <NotFoundPage />,

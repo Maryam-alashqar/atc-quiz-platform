@@ -12,6 +12,7 @@ import type { CookieOptions, Response } from 'express';
 import type { Environment } from '../config/environment.js';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { CurrentUser, Public } from './auth.decorators.js';
 import { LoginThrottlerGuard } from './guards/login-throttler.guard.js';
 import { AUTH_COOKIE, type AuthUser } from './auth.types.js';
@@ -55,6 +56,17 @@ export class AuthController {
   logout(@Res({ passthrough: true }) response: Response) {
     response.setHeader('Cache-Control', 'no-store');
     response.clearCookie(AUTH_COOKIE, this.cookieOptions());
+  }
+
+  /** Any signed-in user changes their own password. Throttled per account. */
+  @Post('password')
+  @HttpCode(204)
+  @UseGuards(LoginThrottlerGuard)
+  async changePassword(
+    @CurrentUser() user: AuthUser,
+    @Body() body: ChangePasswordDto,
+  ) {
+    await this.auth.changePassword(user.id, body);
   }
 
   @Get('me')

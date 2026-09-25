@@ -1,7 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { verifyPassword } from '../common/security/password.js';
+import { hashPassword, verifyPassword } from '../common/security/password.js';
+import type { ChangePasswordDto } from './dto/change-password.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { AuthUser } from './auth.types.js';
 
@@ -82,5 +87,28 @@ export class AuthService {
     });
     if (!user) throw new UnauthorizedException('Invalid or expired session');
     return toAuthUser(user);
+  }
+
+  /**
+   * Change one's own password. The current password is required, so a device left signed in
+   * is not enough to take over the account. A wrong current password is a 400, not a 401:
+   * the session itself is valid and must not be ended.
+   */
+  async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
+    const account = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+    if (!account) throw new UnauthorizedException('Invalid or expired session');
+    if (!(await verifyPassword(dto.currentPassword, account.passwordHash)))
+      throw new BadRequestException('Current password is incorrect');
+    if (dto.newPassword === dto.currentPassword)
+      throw new BadRequestException(
+        'The new password must be different from the current one',
+      );
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: await hashPassword(dto.newPassword) },
+    });
   }
 }

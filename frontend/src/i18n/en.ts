@@ -405,6 +405,17 @@ export const en = {
   'player.leaveTitle': 'Leave the quiz?',
   'player.leaveBody': 'Your answers are saved and you can come back to finish, but the timer keeps running: {time} left.',
   'player.leaveConfirm': 'Leave',
+
+  'account.title': 'My account',
+  'account.changePassword': 'Change password',
+  'account.hint': 'Replace the first password you were given with one only you know. You stay signed in on this device.',
+  'account.current': 'Current password',
+  'account.confirm': 'Repeat the new password',
+  'account.save': 'Change password',
+  'account.changed': 'Your password has been changed. Use the new one next time you sign in.',
+  'account.mismatch': 'The two new passwords don’t match.',
+  'account.same': 'The new password must be different from the current one.',
+  'account.wrongCurrent': 'The current password is not correct.',
 } as const
 
 export type MessageKey = keyof typeof en

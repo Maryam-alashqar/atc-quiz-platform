@@ -45,6 +45,7 @@ for the SameSite=Lax cookie; arbitrary cross-site cookie deployment is out of sc
 | `POST /api/auth/login` | `200 {"user":{...}}` plus a session cookie | Public; trusted Origin required |
 | `GET /api/auth/me` | `200 {"user":{...}}` | Valid session cookie required |
 | `POST /api/auth/logout` | `204` plus an expired session cookie | Trusted Origin required; works even without a valid session |
+| `POST /api/auth/password` | `204` | Session required. `{ currentPassword, newPassword }`; a wrong current password is `400` (the session stays valid), limited per account like login |
 
 Login JSON contains exactly `username` and `password`. Usernames are trimmed and
 lowercased; passwords are not trimmed. Extra fields are rejected. User responses

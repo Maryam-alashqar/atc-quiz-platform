@@ -406,4 +406,15 @@ export const ar: Record<MessageKey, string> = {
   'player.leaveTitle': 'مغادرة الاختبار؟',
   'player.leaveBody': 'إجاباتك محفوظة ويمكنك العودة لإكماله، لكن المؤقت يستمر: متبقٍّ {time}.',
   'player.leaveConfirm': 'مغادرة',
+
+  'account.title': 'حسابي',
+  'account.changePassword': 'تغيير كلمة المرور',
+  'account.hint': 'استبدل كلمة المرور الأولى التي أُعطيت لك بأخرى تعرفها أنت فقط. ستبقى مسجّل الدخول على هذا الجهاز.',
+  'account.current': 'كلمة المرور الحالية',
+  'account.confirm': 'أعد كتابة كلمة المرور الجديدة',
+  'account.save': 'تغيير كلمة المرور',
+  'account.changed': 'تم تغيير كلمة المرور. استخدم الجديدة في المرة القادمة.',
+  'account.mismatch': 'كلمتا المرور الجديدتان غير متطابقتين.',
+  'account.same': 'يجب أن تختلف كلمة المرور الجديدة عن الحالية.',
+  'account.wrongCurrent': 'كلمة المرور الحالية غير صحيحة.',
 }
