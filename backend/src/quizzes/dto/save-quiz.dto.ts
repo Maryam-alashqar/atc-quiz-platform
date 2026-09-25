@@ -17,7 +17,11 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { NegativeMarking, QuizLanguage } from '../../generated/prisma/enums.js';
+import {
+  NegativeMarking,
+  QuizAudience,
+  QuizLanguage,
+} from '../../generated/prisma/enums.js';
 
 const Provided = () =>
   ValidateIf((_object: unknown, value: unknown) => value !== undefined);
@@ -119,6 +123,25 @@ export class SaveQuizDto {
   @ArrayUnique()
   @IsUUID('all', { each: true })
   classIds?: string[];
+
+  /** CLASSES: every student in classIds. STUDENTS: only the students in studentIds. */
+  @Provided()
+  @IsEnum(QuizAudience)
+  audience?: QuizAudience;
+
+  @Provided()
+  @Transform(({ value }: { value: unknown }) =>
+    Array.isArray(value)
+      ? value.map((id: unknown) =>
+          typeof id === 'string' ? id.toLowerCase() : id,
+        )
+      : value,
+  )
+  @IsArray()
+  @ArrayMaxSize(500)
+  @ArrayUnique()
+  @IsUUID('all', { each: true })
+  studentIds?: string[];
 
   @Provided()
   @IsArray()

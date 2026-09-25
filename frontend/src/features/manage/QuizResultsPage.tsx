@@ -10,6 +10,7 @@ import { EmptyState, ErrorState, Spinner } from '../../components/ui/States'
 import { useI18n } from '../../i18n/context'
 import type { MessageKey } from '../../i18n/en'
 import { formatDateTime } from '../../lib/time'
+import { QuizRoster } from './QuizRoster'
 
 const statusBadge: Record<AttemptStatus, { key: MessageKey; tone: Tone }> = {
   SUBMITTED: { key: 'results.status.SUBMITTED', tone: 'success' },
@@ -46,6 +47,8 @@ export function QuizResultsPage() {
   const { id = '' } = useParams()
   const { t, locale } = useI18n()
   const [page, setPage] = useState(1)
+  // Default to the class list: the first question is usually "who hasn't done it?"
+  const [view, setView] = useState<'students' | 'attempts'>('students')
   const results = useQuizResults(id, page)
   const quiz = useManagedQuiz(id)
 
@@ -111,8 +114,32 @@ export function QuizResultsPage() {
         <Stat label={t('results.lowest')} value={num(summary.lowestScore)} />
       </div>
 
+      <div role="tablist" aria-label={t('results.teacherTitle')} className="flex gap-1 self-start rounded-full bg-surface p-1 shadow-card">
+        {(
+          [
+            ['students', t('roster.tab.students')],
+            ['attempts', t('roster.tab.attempts', { n: total })],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={view === value}
+            onClick={() => setView(value)}
+            className={`min-h-10 rounded-full px-4 text-sm font-semibold ${
+              view === value ? 'bg-primary text-white' : 'text-muted hover:text-primary'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <Card className="overflow-hidden">
-        {items.length === 0 ? (
+        {view === 'students' ? (
+          <QuizRoster quizId={id} />
+        ) : items.length === 0 ? (
           <EmptyState title={t('results.none')}>{t('results.noneBody')}</EmptyState>
         ) : (
           <>
@@ -171,7 +198,7 @@ export function QuizResultsPage() {
         )}
       </Card>
 
-      {pages > 1 && (
+      {view === 'attempts' && pages > 1 && (
         <div className="flex items-center justify-center gap-3">
           <Button variant="secondary" disabled={page === 1} onClick={() => setPage(page - 1)}>
             {t('player.prev')}
@@ -182,7 +209,7 @@ export function QuizResultsPage() {
           </Button>
         </div>
       )}
-      <p className="text-xs text-muted">{t('results.footnote')}</p>
+      {view === 'attempts' && <p className="text-xs text-muted">{t('results.footnote')}</p>}
     </div>
   )
 }

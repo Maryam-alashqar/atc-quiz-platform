@@ -36,7 +36,11 @@ function QuizCard({ quiz, showTeacher }: { quiz: TeacherQuizSummary; showTeacher
           </span>
           <span className="flex items-center gap-1.5">
             <Users className="size-4" aria-hidden="true" />
-            {quiz.classes.length ? quiz.classes.map((c) => c.name).join(', ') : t('manage.noClasses')}
+            {quiz.audience === 'STUDENTS'
+              ? t('manage.namedCount', { n: quiz.studentCount })
+              : quiz.classes.length
+                ? quiz.classes.map((c) => c.name).join(', ')
+                : t('manage.noClasses')}
           </span>
           {showTeacher && (
             <span>

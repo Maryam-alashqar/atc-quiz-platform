@@ -101,6 +101,95 @@ export class ResultsService {
     );
   }
 
+  /**
+   * Every student the quiz is assigned to, with their attempt or none, so a teacher can
+   * see who has not started. Students who attempted and later changed class are kept.
+   */
+  async students(id: string, user: AuthUser) {
+    await this.authorize(id, user);
+    return this.prisma.$transaction(
+      async (tx) => {
+        const quiz = await tx.quiz.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            opensAt: true,
+            closesAt: true,
+            audience: true,
+            students: { select: { studentId: true } },
+            classes: {
+              select: { class: { select: { id: true, name: true } } },
+              orderBy: { class: { name: 'asc' } },
+            },
+          },
+        });
+        if (!quiz) throw new NotFoundException('Quiz not found');
+        const classIds = quiz.classes.map((c) => c.class.id);
+        const [students, attempts] = await Promise.all([
+          tx.user.findMany({
+            // Named-student quizzes list exactly those students; others list their classes.
+            where:
+              quiz.audience === 'STUDENTS'
+                ? { id: { in: quiz.students.map((s) => s.studentId) } }
+                : { role: 'STUDENT', classId: { in: classIds } },
+            select: resultSelect.student.select,
+            orderBy: [{ class: { name: 'asc' } }, { name: 'asc' }],
+          }),
+          tx.attempt.findMany({ where: { quizId: id }, select: resultSelect }),
+        ]);
+        const byStudent = new Map(attempts.map((a) => [a.student.id, a]));
+        const listed = new Set(students.map((s) => s.id));
+        const rows = [
+          ...students.map((student) => ({
+            student,
+            attempt: byStudent.get(student.id),
+          })),
+          ...attempts
+            .filter((a) => !listed.has(a.student.id))
+            .map((a) => ({ student: a.student, attempt: a })),
+        ].map(({ student, attempt }) => ({
+          student,
+          attempt: attempt ? present(attempt) : null,
+        }));
+        const count = (status: string) =>
+          rows.filter((r) => r.attempt?.status === status).length;
+        return {
+          quiz: {
+            id: quiz.id,
+            title: quiz.title,
+            status: quiz.status,
+            opensAt: quiz.opensAt,
+            closesAt: quiz.closesAt,
+            audience: quiz.audience,
+            classes: quiz.classes.map((c) => c.class),
+          },
+          summary: {
+            assigned: students.length,
+            notStarted: rows.filter((r) => !r.attempt).length,
+            inProgress: count('IN_PROGRESS'),
+            submitted: count('SUBMITTED'),
+            expired: count('EXPIRED'),
+          },
+          items: rows.map(({ student, attempt }) => ({
+            student,
+            attempt: attempt && {
+              id: attempt.id,
+              status: attempt.status,
+              startedAt: attempt.startedAt,
+              submittedAt: attempt.submittedAt,
+              score: attempt.score,
+              maxScore: attempt.maxScore,
+              percentage: attempt.percentage,
+            },
+          })),
+        };
+      },
+      { isolationLevel: 'RepeatableRead', timeout: 15_000 },
+    );
+  }
+
   async export(id: string, user: AuthUser) {
     await this.authorize(id, user);
     const rows = await this.prisma.attempt.findMany({

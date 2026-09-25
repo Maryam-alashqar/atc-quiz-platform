@@ -1,4 +1,4 @@
-import { BarChart3, ClipboardList, FilePlus2, FileText, House, Users, type LucideIcon } from 'lucide-react'
+import { BarChart3, ClipboardList, FilePlus2, FileText, GraduationCap, House, Users, type LucideIcon } from 'lucide-react'
 import type { Role } from '../../api/types'
 import type { MessageKey } from '../../i18n/en'
 
@@ -17,7 +17,9 @@ export const navigation: Record<Role, NavItem[]> = {
     { to: '/student/results', label: 'nav.results', icon: BarChart3 },
   ],
   TEACHER: [
+    { to: '/manage', label: 'nav.home', icon: House, end: true },
     { to: '/manage/quizzes', label: 'nav.quizzes', icon: ClipboardList, end: true },
+    { to: '/manage/students', label: 'nav.myStudents', icon: GraduationCap },
     { to: '/manage/quizzes/new', label: 'nav.newQuiz', icon: FilePlus2 },
   ],
   ADMIN: [
@@ -28,7 +30,7 @@ export const navigation: Record<Role, NavItem[]> = {
   ],
 }
 
-const homes: Record<Role, string> = { STUDENT: '/student', TEACHER: '/manage/quizzes', ADMIN: '/admin' }
+const homes: Record<Role, string> = { STUDENT: '/student', TEACHER: '/manage', ADMIN: '/admin' }
 
 export function homePath(role: Role): string {
   return homes[role]

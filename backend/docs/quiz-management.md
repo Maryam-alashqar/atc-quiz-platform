@@ -127,3 +127,14 @@ npm run test:e2e -- test/quiz-edit-protection.e2e-spec.ts
 Tests use isolated schemas and clearly named scenarios. The attempt-protection
 tests create database fixtures directly; student start/save/submit and scoring
 endpoints are the next implementation stage.
+
+## Audience: whole classes or named students
+
+`audience` is `CLASSES` (default) or `STUDENTS`.
+
+- `CLASSES`: every student currently in `classIds` can see and take the quiz.
+- `STUDENTS`: only the students in `studentIds` can, whatever their class. `classIds` is ignored for access.
+
+Both lists are stored as sent, so switching back and forth in the editor loses nothing, but only the list matching `audience` grants access. Publishing requires at least one class or one named student to match. `studentIds` must be existing STUDENT accounts (400 otherwise). Like classes, `audience` and `studentIds` are frozen once an attempt exists (409).
+
+Every student-facing query (list, upcoming, preview, start) uses the single `assignedTo()` rule in `src/attempts/attempts.service.ts`. The dashboards, the results roster (`GET /api/quizzes/:id/results/students`) and "My students" (`GET /api/overview/students`) count expected students the same way. Teachers find students to name with `GET /api/students?search=&classId=`, a read-only lookup (identity and class only). CSV imports create class-based quizzes.

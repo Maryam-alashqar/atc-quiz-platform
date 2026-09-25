@@ -1,9 +1,7 @@
-import { Activity, ArrowRight, ClipboardList, GraduationCap, Users } from 'lucide-react'
+import { Activity, ArrowRight, BarChart3, ClipboardList, GraduationCap } from 'lucide-react'
 import { Link } from 'react-router'
 import { useOverview } from '../../api/admin'
 import { useCurrentUser } from '../../app/useCurrentUser'
-import adminHero800 from '../../assets/admin-hero-800.webp'
-import adminHero1400 from '../../assets/admin-hero-1400.webp'
 import { Hero } from '../../components/dashboard/Hero'
 import {
   ParticipationBar,
@@ -16,14 +14,15 @@ import { Card, SectionCard } from '../../components/ui/Card'
 import { EmptyState, ErrorState, Spinner } from '../../components/ui/States'
 import { useI18n } from '../../i18n/context'
 
-export function AdminDashboardPage() {
+/** A teacher's home: who is keeping up with their quizzes, and who still has to start. */
+export function TeacherDashboardPage() {
   const { t } = useI18n()
   const user = useCurrentUser()
   const overview = useOverview(user.id)
 
-  const viewResults = (
-    <Link to="/manage/quizzes" className="flex items-center gap-1 text-sm font-semibold text-secondary hover:text-primary">
-      {t('nav.allQuizzes')}
+  const link = (to: string, label: string) => (
+    <Link to={to} className="flex items-center gap-1 text-sm font-semibold text-secondary hover:text-primary">
+      {label}
       <ArrowRight className="size-4 rtl:-scale-x-100" aria-hidden="true" />
     </Link>
   )
@@ -32,11 +31,10 @@ export function AdminDashboardPage() {
     <div className="flex flex-col gap-5">
       <Hero
         name={user.name}
-        title={t('admin.heroTitle')}
-        accent={t('admin.heroAccent')}
-        body={t('admin.heroBody')}
-        cta={{ to: '/admin/users', label: t('admin.heroCta') }}
-        image={{ small: adminHero800, large: adminHero1400 }}
+        title={t('teacher.heroTitle')}
+        accent={t('teacher.heroAccent')}
+        body={t('teacher.heroBody')}
+        cta={{ to: '/manage/quizzes/new', label: t('nav.newQuiz') }}
       />
 
       {overview.isPending ? (
@@ -49,20 +47,12 @@ export function AdminDashboardPage() {
         <>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <StatCard
-              to="/admin/users"
+              to="/manage/students"
               tone="sky"
               icon={<GraduationCap className="size-7" aria-hidden="true" />}
-              label={t('admin.stat.students')}
+              label={t('teacher.stat.students')}
               value={overview.data.counts.students}
               hint={t('admin.stat.classes', { n: overview.data.counts.classes })}
-            />
-            <StatCard
-              to="/admin/users?role=TEACHER"
-              tone="sky"
-              icon={<Users className="size-7" aria-hidden="true" />}
-              label={t('admin.stat.teachers')}
-              value={overview.data.counts.teachers}
-              hint={t('admin.stat.teachersHint')}
             />
             <StatCard
               to="/manage/quizzes"
@@ -73,48 +63,40 @@ export function AdminDashboardPage() {
               hint={t('admin.stat.liveHint', { n: overview.data.counts.scheduledQuizzes })}
             />
             <StatCard
-              to="/manage/quizzes"
+              to="/manage/students"
               tone="sky"
               icon={<Activity className="size-7" aria-hidden="true" />}
               label={t('admin.stat.participation')}
               value={overview.data.overall.participation === null ? '—' : `${overview.data.overall.participation}%`}
-              hint={
-                overview.data.overall.averagePercent === null
-                  ? t('admin.nothingYet')
-                  : t('admin.avgScore', { n: overview.data.overall.averagePercent })
-              }
+              hint={t('admin.rateDetail', { done: overview.data.overall.completed, expected: overview.data.overall.expected })}
+            />
+            <StatCard
+              to="/manage/quizzes"
+              tone="sky"
+              icon={<BarChart3 className="size-7" aria-hidden="true" />}
+              label={t('dash.stat.average')}
+              value={overview.data.overall.averagePercent === null ? '—' : `${overview.data.overall.averagePercent}%`}
+              hint={t('teacher.stat.averageHint')}
             />
           </div>
 
           <div className="grid items-start gap-5 lg:grid-cols-[1.45fr_1fr]">
             <div className="flex min-w-0 flex-col gap-5">
-              <SectionCard title={t('teacher.followUp')} action={viewResults}>
+              <SectionCard title={t('teacher.followUp')} action={link('/manage/quizzes', t('nav.quizzes'))}>
+                <p className="-mt-1 mb-1 text-sm text-muted">{t('teacher.followUpHint')}</p>
                 <QuizFollowUpList quizzes={overview.data.quizzes} />
               </SectionCard>
-              <SectionCard title={t('admin.byClass')}>
-                <p className="-mt-1 mb-4 text-sm text-muted">{t('admin.byClassHint')}</p>
-                <div className="flex flex-col gap-5">
-                  {overview.data.classes.map((c) => (
-                    <ParticipationBar
-                      key={c.id}
-                      label={c.name}
-                      sub={t('admin.classSub', { students: c.students, quizzes: c.quizzes })}
-                      rate={c}
-                    />
-                  ))}
-                </div>
-              </SectionCard>
-              <SectionCard title={t('admin.byTeacher')}>
-                {overview.data.teachers.length === 0 ? (
-                  <EmptyState title={t('admin.noTeachers')} />
+              <SectionCard title={t('admin.byClass')} action={link('/manage/students', t('nav.myStudents'))}>
+                {overview.data.classes.length === 0 ? (
+                  <EmptyState title={t('teacher.noClasses')}>{t('teacher.noClassesBody')}</EmptyState>
                 ) : (
                   <div className="flex flex-col gap-5">
-                    {overview.data.teachers.map((teacher) => (
+                    {overview.data.classes.map((c) => (
                       <ParticipationBar
-                        key={teacher.id}
-                        label={teacher.name}
-                        sub={t('admin.teacherSub', { quizzes: teacher.quizzes })}
-                        rate={teacher}
+                        key={c.id}
+                        label={c.name}
+                        sub={t('admin.classSub', { students: c.students, quizzes: c.quizzes })}
+                        rate={c}
                       />
                     ))}
                   </div>

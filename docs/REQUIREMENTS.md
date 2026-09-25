@@ -59,11 +59,27 @@ A mobile-first, bilingual (Arabic/English) quiz platform for a tutoring centre. 
 | FR-16 | A realistic sample quiz: ~15 questions, four options each | ✅ |
 | FR-17 | Sample data is loadable, since real data will arrive as spreadsheets | ✅ CSV importer |
 
+### Product requirements derived from the brief
+
+The brief says what Nour wants to see ("how the students did"), but not how a small centre runs the system day to day. These requirements fill that in.
+
+| ID | Requirement | Status |
+| --- | --- | --- |
+| PR-01 | There is no self sign-up. The admin adds students and teachers with a first password, corrects names and classes, and resets forgotten passwords | ✅ |
+| PR-02 | The admin has a centre dashboard: head counts, participation and average score per class and per teacher, quiz status, per-quiz follow-up, and latest submissions | ✅ |
+| PR-03 | A teacher has their own dashboard: participation and average across their quizzes, and for each quiz how many finished, are in progress, or have not started | ✅ |
+| PR-04 | For each quiz, a teacher sees every student it is meant for, and can filter to exactly who has not started | ✅ |
+| PR-05 | A teacher has a "My Students" list: each of their students' progress on that teacher's quizzes (finished, open but not started, missed, average). Class changes stay with the admin, because a class affects every teacher | ✅ |
+| PR-06 | A quiz is for **whole classes** or for **named students** from any class (for example a catch-up quiz). Only those students can see or take it | ✅ |
+| PR-07 | Students see upcoming quizzes, not only open ones, so they can plan | ✅ |
+| PR-08 | Signing in must not lock out a whole class that shares the centre's Wi-Fi (one public IP) | ✅ |
+
 ## 4. Gaps in the brief and decisions taken
 
 | Topic | Decision |
 | --- | --- |
-| **Quiz assignment** | Each quiz is assigned to one or more classes. Only students in those classes can see or start it. |
+| **Quiz audience** | A quiz is for whole classes (one or more), or for a list of named students from any class. Only those students can see or start it. One server rule (`assignedTo`) decides this for every student request. |
+| **Following up** | "Expected" students for a quiz = everyone it is meant for. Participation = finished attempts ÷ expected. Dashboards and rosters count this the same way, and grade abandoned attempts whose time is up before reporting. |
 | **Negative-mark formula** | Per quiz: `NONE`, `FRACTION` or `FIXED`. `FRACTION` (the default when enabled) subtracts a fraction of the question's own points, e.g. 0.25 × points, because a flat penalty is unfair when questions carry different points. `FIXED` subtracts a set value per wrong answer. Correct = question points; unanswered = 0; the final score is floored at 0. |
 | **Attempt timing** | The timer starts when the server creates the attempt. Refreshing or reopening does not reset it. Expiry is enforced on the first read or write after the deadline, with a 10-second grace period for network delay, so no cron job is needed. |
 | **One attempt** | Enforced both in application logic and by a unique database constraint on `(quizId, studentId)`, which also covers concurrent start requests. |
@@ -78,16 +94,18 @@ A mobile-first, bilingual (Arabic/English) quiz platform for a tutoring centre. 
 | **Answer persistence** | Each selected answer is saved to the server immediately. If connectivity drops or time runs out, scoring uses the answers already saved. |
 | **Numeric precision** | Points, penalties and scores are stored as `Decimal`, not `Float`, to avoid rounding errors with fractional penalties. |
 | **Password recovery** | Not in the MVP. Demo credentials are seeded. |
-| **Admin** | An Admin role for Nour, with centre-wide visibility of quizzes and results. She asked to "see how the students did", and she is not a teacher. |
+| **Admin** | An Admin role for Nour, with centre-wide visibility of quizzes and results. She asked to "see how the students did", and she is not a teacher. The admin also manages accounts and can create a quiz for a chosen teacher. |
+| **Accounts** | Created by the spreadsheet import or by the admin, never by sign-up. The admin sees a generated first password once, to hand over. There is no forced change on first login and no deactivation yet (see next steps). |
+| **Login limit** | Login attempts are limited per client IP *and* username, so classmates on shared Wi-Fi don't lock each other out. |
 | **CSRF** | Cookie auth is combined with `SameSite=Lax` and a trusted-origin check on state-changing requests. |
 
 ## 5. Core user flows
 
 **Student:** Login → Dashboard (available, upcoming and completed quizzes) → Quiz details → Start confirmation → Timed quiz → Submit or time out → Score page.
 
-**Teacher:** Login → Dashboard → Quiz list → Create/edit quiz → Add ~15 questions with options and points → Set classes, time limit, availability window and negative marking → Publish → Results (with CSV export).
+**Teacher:** Login → Dashboard (quizzes to follow, participation by class) → Create/edit quiz → Add ~15 questions with options and points → Choose whole classes or named students, time limit, availability window and negative marking → Publish → Results: who has not started, who finished, scores, CSV export → My Students (progress per student).
 
-**Admin:** Login → All quizzes across teachers → Results for any quiz.
+**Admin:** Login → Centre dashboard (participation by class and teacher, quizzes to follow) → Users (add a student or teacher, reset a password) → All quizzes and results → Create a quiz for a chosen teacher.
 
 ## 6. Data model (as implemented)
 
@@ -95,8 +113,9 @@ A mobile-first, bilingual (Arabic/English) quiz platform for a tutoring centre. 
 | --- | --- |
 | `User` | id, username (unique), name, passwordHash (scrypt), role (`STUDENT`/`TEACHER`/`ADMIN`), classId? |
 | `Class` | id, name (unique: 10A / 10B / 11A) |
-| `Quiz` | id, teacherId, title, description, language (`AR`/`EN`), durationMinutes, opensAt, closesAt, status (`DRAFT`/`PUBLISHED`), negativeMarking (`NONE`/`FRACTION`/`FIXED`), penaltyValue |
-| `QuizClass` | quizId, classId (composite PK) |
+| `Quiz` | id, teacherId, title, description, language (`AR`/`EN`), durationMinutes, opensAt, closesAt, status (`DRAFT`/`PUBLISHED`), negativeMarking (`NONE`/`FRACTION`/`FIXED`), penaltyValue, audience (`CLASSES`/`STUDENTS`) |
+| `QuizClass` | quizId, classId (composite PK). Used when audience is `CLASSES` |
+| `QuizStudent` | quizId, studentId (composite PK). Used when audience is `STUDENTS` |
 | `Question` | id, quizId, prompt, points, order (unique per quiz) |
 | `Option` | id, questionId, text, isCorrect, order (unique per question) |
 | `Attempt` | id, quizId, studentId, startedAt, deadlineAt, submittedAt, status (`IN_PROGRESS`/`SUBMITTED`/`EXPIRED`), score, maxScore. Unique on `(quizId, studentId)` |
@@ -110,6 +129,8 @@ Each case below is enforced on the server and covered by an automated test.
 
 - Starting the same quiz twice, including two concurrent start requests
 - Accessing a quiz not assigned to the student's class (by editing the URL or the API call)
+- A classmate who was not named opening or starting a quiz meant for named students
+- A student or teacher calling admin-only account endpoints, or a teacher reading another teacher's roster
 - Starting before `opensAt` or after `closesAt`
 - Refreshing, closing or reopening the page to reset the timer
 - Answering or submitting after the server-side deadline
@@ -142,12 +163,15 @@ Teacher (own quizzes) / Admin (all)
 GET/POST          /quizzes
 GET/PATCH/DELETE  /quizzes/:id
 POST /quizzes/:id/publish
-GET  /quizzes/:id/results
+GET  /quizzes/:id/results             attempts, scores, summary
+GET  /quizzes/:id/results/students    everyone the quiz is meant for, with their attempt or none
 GET  /quizzes/:id/results/export       CSV with UTF-8 BOM, so Arabic opens correctly in Excel
+GET  /overview                         dashboard: the admin's covers the centre, a teacher's covers their own quizzes
+GET  /overview/students                "My Students": progress per student
+GET  /students                         read-only lookup to name students on a quiz
 GET  /classes
 
 Admin
-GET  /overview                         head counts, participation per class and teacher, latest submissions
 GET/POST /users                        list (search, role, class) / create a student or teacher
 PATCH    /users/:id                    rename, move a student to another class
 POST     /users/:id/password           set a new password
@@ -175,8 +199,8 @@ Loaded from `backend/prisma/data/*.csv` through the importer. The data set has 3
 | --- | --- |
 | Shared | Login · App shell with role-based navigation · Language/direction toggle · Loading, empty and error states |
 | Student | Dashboard (open / upcoming / completed) · Quiz details + start confirmation · Quiz player (one question per screen on phones, question navigator, save indicator, sticky countdown, auto-submit at zero, resume after refresh) · Result page (score + percentage) |
-| Teacher | Quiz list with status · Quiz editor (details, classes, window, duration, marking, 15 questions × 4 options, points; read-only fields once attempts exist) · Publish · Results table + summary + CSV export |
-| Admin | Dashboard (participation by class and teacher, quiz status, latest submissions) · Users (add, edit, reset password) · All quizzes and results · Create a quiz for a chosen teacher |
+| Teacher | Dashboard (quizzes to follow, participation by class, latest submissions) · My Students (progress per student, filters for who is behind) · Quiz list with status · Quiz editor (details, whole classes or named students with a searchable picker, window, duration, marking, 15 questions × 4 options, points; read-only fields once attempts exist) · Publish · Results: Students tab (who has not started) and Attempts tab (scores) + CSV export |
+| Admin | Dashboard (participation by class and teacher, quizzes to follow, quiz status, latest submissions) · Users (add, edit, reset password) · All quizzes and results · Create a quiz for a chosen teacher |
 
 The API is the only source of truth for time: the countdown uses `deadlineAt` and `serverTime` from the API, so a wrong clock on the device cannot extend the quiz.
 
@@ -195,10 +219,11 @@ The API is the only source of truth for time: the countdown uses `deadlineAt` an
 | 8 | Backend Dockerfile: migrate, seed and start automatically | ✅ |
 | 9 | Frontend: design system, auth, app shell | ✅ |
 | 10 | Frontend: student flow | ✅ |
-| 11 | Frontend: teacher/admin flow | ✅ |
-| 12 | Full `docker compose up --build` (db + backend + frontend) | ✅ |
-| 13 | Root README, DECISIONS.md, AI_USAGE.md final pass | ✅ |
-| 14 | Admin: account management and centre dashboard (added after testing the teacher flow) | ✅ |
+| 11 | Frontend: teacher quiz management and results | ✅ |
+| 12 | Admin: account management and centre dashboard (PR-01, PR-02) | ✅ |
+| 13 | Teacher follow-up: dashboard, per-quiz roster, My Students, named-student quizzes (PR-03 to PR-06) | ✅ |
+| 14 | Full `docker compose up --build` (db + backend + frontend) | ✅ |
+| 15 | Root README, DECISIONS.md, AI_USAGE.md final pass | ✅ |
 
 ## 12. Deliverables (byThursday)
 

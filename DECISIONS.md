@@ -10,7 +10,8 @@ React + TypeScript (Vite, Tailwind) for the frontend, NestJS + TypeScript for th
 
 **Who uses it**
 - Three roles: **Student**, **Teacher**, and **Admin**. The Admin role is Nour: she asked to "see how the students did" across the centre, and she is not a teacher.
-- A student belongs to exactly one class. A quiz can be assigned to several classes. The teacher who creates a quiz owns it.
+- A student belongs to exactly one class. The teacher who creates a quiz owns it.
+- A quiz is for **whole classes** (one or more), or for **named students** from any class, such as a catch-up quiz for three students. "It depends on the teacher and the quiz" applies to who takes a quiz as much as to how it is marked.
 - Students sign in with a **username** (for example `s10a-07`), not an email address. Many students won't have one, and the real list arrives as a spreadsheet.
 - There is no self sign-up. Accounts come from the spreadsheet import or are created by the admin.
 
@@ -40,7 +41,11 @@ React + TypeScript (Vite, Tailwind) for the frontend, NestJS + TypeScript for th
 
 | Addition | Why |
 | --- | --- |
-| **Admin dashboard** | Head counts, participation rate and average score per class and per teacher, quiz status, and latest submissions. This is how Nour "sees how the students did" without opening every quiz. *Participation* = completed attempts ÷ (students in the class × quizzes that have opened for that class). |
+| **Admin dashboard** | Head counts, participation rate and average score per class and per teacher, quizzes to follow, quiz status, and latest submissions. This is how Nour "sees how the students did" without opening every quiz. *Participation* = finished attempts ÷ the students each opened quiz is meant for. |
+| **Teacher dashboard** | The same view limited to the teacher's own quizzes. For each quiz it shows how many finished, are in progress, or have not started, so the teacher knows whom to chase before it closes. |
+| **Who has not started** | Each quiz's results open on a list of every student it is meant for, filterable to exactly who has not started. The brief's "see how the students did" includes the ones who didn't take it. |
+| **My Students** | Each of a teacher's students with their progress on that teacher's quizzes: finished, open but not started, missed, and average. |
+| **Quizzes for named students** | The teacher picks "Whole classes" or "Named students" in the editor, with a searchable picker. One server rule decides access for every student request, and dashboards and rosters count expected students the same way. |
 | **Account management for the admin** | Add a student or teacher with a generated first password (shown once to hand over), fix names and classes, and reset forgotten passwords. Without sign-up, a new student mid-term would otherwise need a developer. |
 | **Upcoming quizzes for students** | "Opens tomorrow" on the dashboard, so students can plan. They can't be opened early. |
 | **Answers saved on every tap** | Most students are on phones, often on patchy connections. A queue retries saves until they succeed, and the timer keeps running on the server. A dropped connection or a timeout loses nothing that was already chosen. |
@@ -56,6 +61,7 @@ React + TypeScript (Vite, Tailwind) for the frontend, NestJS + TypeScript for th
 - **XLSX upload UI.** A CSV import command exists (`npm run db:import -- <folder>`). A spreadsheet upload screen with column mapping is next week's work.
 - **Password reset by email, and forcing a password change on first login.** The admin hands out and resets passwords, which covers a small centre where everyone is known by name.
 - **Deleting or deactivating accounts.** Attempts reference the student, and old results must stay intact. Deactivation is the right fix. Deletion isn't.
+- **Teachers moving students between classes.** A student's class decides the quizzes of every teacher, so class changes stay with the admin. A teacher who wants a quiz for particular students names them on the quiz instead.
 - **Retakes, question banks, random question order, timed-per-question quizzes.**
 - **Showing correct answers after the quiz closes.** This is a sensible next step (see below). It stays off until Nour decides.
 - **Session revocation.** Signing out clears the cookie, and a copied token stays valid until it expires (1 hour).
@@ -65,7 +71,9 @@ React + TypeScript (Vite, Tailwind) for the frontend, NestJS + TypeScript for th
 
 - **Docker runs on plain HTTP.** Compose runs the API with `NODE_ENV=development`. In production the API refuses a non-HTTPS origin and sets `Secure` cookies. Some browsers (Safari) won't store `Secure` cookies on `http://localhost`, so the local setup can't use production mode.
 - **Participation figures use each student's current class.** Moving a student doesn't rewrite history, but their old attempts no longer count towards either class's rate.
-- **Expiry is lazy.** An abandoned attempt past its deadline is graded the next time the student or the teacher's results page reads it. There is no background worker, so the admin dashboard, which only counts graded attempts, can lag until then.
+- **Expiry is lazy.** An abandoned attempt past its deadline is graded the next time anything reads it: the student, the quiz's results, or a dashboard, which each grade overdue attempts before reporting. There is no background worker. That's enough at this size, but a scheduled job would be better at scale.
+- **The audience is frozen with the questions.** Once a student has started, the classes and named students can't change, just like the points. To include someone later, the teacher makes a second quiz for them.
+- **The CSV import creates whole-class quizzes.** Quizzes for named students are made in the editor.
 - **Sessions last one hour.** A student who signed in 55 minutes before starting may be sent back to the sign-in page mid-quiz. Their answers and deadline are kept, and they resume after signing in again.
 
 ## Next week

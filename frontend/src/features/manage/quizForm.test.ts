@@ -97,12 +97,29 @@ describe('validation', () => {
   })
 })
 
+describe('audience', () => {
+  const ali = { id: 's1', username: 's10a-01', name: 'Ali', class: { id: 'c1', name: '10A' } }
+
+  it('needs named students, not classes, to publish a quiz for named students', () => {
+    const named = completeDraft({ audience: 'STUDENTS', classIds: [], students: [] })
+    expect(keysOf(publishIssues(named))).toEqual(['editor.issue.students'])
+    expect(publishIssues({ ...named, students: [ali] })).toEqual([])
+  })
+
+  it('sends the named student ids with the audience', () => {
+    const input = toQuizInput(completeDraft({ audience: 'STUDENTS', students: [ali] }))
+    expect(input).toMatchObject({ audience: 'STUDENTS', studentIds: ['s1'] })
+  })
+})
+
 describe('draftFromQuiz', () => {
   it('turns a stored fraction back into a percentage and finds the correct option', () => {
     const quiz = {
       title: 'T',
       description: null,
       language: 'AR',
+      audience: 'CLASSES',
+      students: [],
       classes: [{ id: 'c1', name: '10A' }],
       opensAt: '2030-01-01T06:00:00.000Z',
       closesAt: '2030-01-02T06:00:00.000Z',

@@ -15,10 +15,23 @@ import { validateQuizRules } from './quiz-rules.js';
 const summaryInclude = {
   teacher: { select: { id: true, username: true, name: true } },
   classes: { include: { class: true }, orderBy: { class: { name: 'asc' } } },
-  _count: { select: { questions: true, attempts: true } },
+  _count: { select: { questions: true, attempts: true, students: true } },
 } satisfies Prisma.QuizInclude;
 const detailInclude = {
   ...summaryInclude,
+  students: {
+    select: {
+      student: {
+        select: {
+          id: true,
+          username: true,
+          name: true,
+          class: { select: { id: true, name: true } },
+        },
+      },
+    },
+    orderBy: { student: { name: 'asc' } },
+  },
   questions: {
     orderBy: { order: 'asc' },
     include: { options: { orderBy: { order: 'asc' } } },
@@ -34,11 +47,14 @@ function summary(quiz: QuizSummary) {
     classes: classes.map((assignment) => assignment.class),
     questionCount: _count.questions,
     attemptCount: _count.attempts,
+    studentCount: _count.students,
   };
 }
 function detail(quiz: QuizDetail) {
+  const { students, ...rest } = quiz;
   return {
-    ...summary(quiz),
+    ...summary(rest),
+    students: students.map((assignment) => assignment.student),
     questions: quiz.questions,
     maxScore: quiz.questions
       .reduce(
@@ -81,6 +97,19 @@ export class QuizzesService {
     });
     if (!quiz) throw new NotFoundException('Quiz not found');
     return quiz;
+  }
+
+  /** Named students must be existing STUDENT accounts (any class). */
+  private async checkStudents(
+    tx: Prisma.TransactionClient,
+    studentIds: string[],
+  ) {
+    if (
+      (await tx.user.count({
+        where: { id: { in: studentIds }, role: 'STUDENT' },
+      })) !== studentIds.length
+    )
+      throw new BadRequestException('One or more students do not exist');
   }
 
   private async checkClasses(tx: Prisma.TransactionClient, classIds: string[]) {
@@ -147,10 +176,12 @@ export class QuizzesService {
       closesAt: new Date(dto.closesAt),
       negativeMarking: dto.negativeMarking ?? 'NONE',
       penaltyValue: dto.penaltyValue ?? '0',
+      audience: dto.audience ?? 'CLASSES',
     };
     const questions = dto.questions ?? [];
     const classIds = dto.classIds ?? [];
-    validateQuizRules({ ...data, questions, classIds }, false);
+    const studentIds = dto.studentIds ?? [];
+    validateQuizRules({ ...data, questions, classIds, studentIds }, false);
     return this.prisma.$transaction(
       async (tx) => {
         if (
@@ -161,11 +192,15 @@ export class QuizzesService {
         )
           throw new BadRequestException('teacherId must identify a teacher');
         await this.checkClasses(tx, classIds);
+        await this.checkStudents(tx, studentIds);
         return detail(
           await tx.quiz.create({
             data: {
               ...data,
               classes: { create: classIds.map((classId) => ({ classId })) },
+              students: {
+                create: studentIds.map((studentId) => ({ studentId })),
+              },
               questions: { create: nestedQuestions(questions) },
             },
             include: detailInclude,
@@ -192,7 +227,9 @@ export class QuizzesService {
           'closesAt',
           'negativeMarking',
           'penaltyValue',
+          'audience',
           'classIds',
+          'studentIds',
           'questions',
         ] as const;
         if (
@@ -214,9 +251,13 @@ export class QuizzesService {
             closesAt,
             negativeMarking: dto.negativeMarking ?? current.negativeMarking,
             penaltyValue: dto.penaltyValue ?? current.penaltyValue,
+            audience: dto.audience ?? current.audience,
             classIds:
               dto.classIds ??
               current.classes.map((assignment) => assignment.classId),
+            studentIds:
+              dto.studentIds ??
+              current.students.map((assignment) => assignment.student.id),
             questions: dto.questions ?? current.questions,
           },
           current.status === 'PUBLISHED',
@@ -224,6 +265,10 @@ export class QuizzesService {
         if (dto.classIds !== undefined) {
           await this.checkClasses(tx, dto.classIds);
           await tx.quizClass.deleteMany({ where: { quizId: id } });
+        }
+        if (dto.studentIds !== undefined) {
+          await this.checkStudents(tx, dto.studentIds);
+          await tx.quizStudent.deleteMany({ where: { quizId: id } });
         }
         if (dto.questions !== undefined)
           await tx.question.deleteMany({ where: { quizId: id } });
@@ -239,6 +284,16 @@ export class QuizzesService {
               closesAt,
               negativeMarking: dto.negativeMarking,
               penaltyValue: dto.penaltyValue,
+              audience: dto.audience,
+              ...(dto.studentIds === undefined
+                ? {}
+                : {
+                    students: {
+                      create: dto.studentIds.map((studentId) => ({
+                        studentId,
+                      })),
+                    },
+                  }),
               ...(dto.classIds === undefined
                 ? {}
                 : {
@@ -272,6 +327,9 @@ export class QuizzesService {
           {
             ...quiz,
             classIds: quiz.classes.map((assignment) => assignment.classId),
+            studentIds: quiz.students.map(
+              (assignment) => assignment.student.id,
+            ),
           },
           true,
         );

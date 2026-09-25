@@ -23,8 +23,23 @@ export interface Rate {
   averagePercent: number | null
 }
 
+export interface QuizFollowUp {
+  id: string
+  title: string
+  closesAt: string
+  open: boolean
+  audience: 'CLASSES' | 'STUDENTS'
+  expected: number
+  completed: number
+  inProgress: number
+  notStarted: number
+  averagePercent: number | null
+}
+
+/** The admin gets the whole centre; a teacher gets the same shape for their own quizzes. */
 export interface Overview {
   serverTime: string
+  scope: 'CENTRE' | 'TEACHER'
   counts: {
     students: number
     teachers: number
@@ -37,6 +52,7 @@ export interface Overview {
   overall: Rate
   classes: (Rate & { id: string; name: string; students: number; quizzes: number })[]
   teachers: (Rate & { id: string; name: string; username: string; quizzes: number })[]
+  quizzes: QuizFollowUp[]
   recent: {
     id: string
     status: AttemptStatus
@@ -57,14 +73,15 @@ export interface UserFilters {
 }
 
 export const adminKeys = {
-  overview: ['admin', 'overview'] as const,
+  // Keyed by user so a teacher and the admin never share a cached overview.
+  overview: (userId: string) => ['admin', 'overview', userId] as const,
   users: (filters: UserFilters) => ['admin', 'users', filters] as const,
   allUsers: ['admin', 'users'] as const,
 }
 
-export function useOverview() {
+export function useOverview(userId: string) {
   return useQuery({
-    queryKey: adminKeys.overview,
+    queryKey: adminKeys.overview(userId),
     queryFn: async () => {
       const data = await api<Overview>('GET', '/overview')
       syncServerTime(data.serverTime)

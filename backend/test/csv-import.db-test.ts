@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { randomUUID } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -29,14 +29,16 @@ beforeAll(async () => {
   await admin.query(`CREATE SCHEMA "${schema}"`);
   created = true;
   await admin.query(`SET search_path TO "${schema}"`);
-  const sql = await readFile(
-    new URL(
-      '../prisma/migrations/20260924180000_init/migration.sql',
-      import.meta.url,
-    ),
-    'utf8',
-  );
-  await admin.query(sql);
+  // Apply every migration in order, so the schema matches production.
+  const directory = new URL('../prisma/migrations/', import.meta.url);
+  const migrations = (await readdir(directory, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  for (const name of migrations)
+    await admin.query(
+      await readFile(new URL(`${name}/migration.sql`, directory), 'utf8'),
+    );
   data = await readDataset(
     fileURLToPath(new URL('../prisma/data/', import.meta.url)),
     new Date(),

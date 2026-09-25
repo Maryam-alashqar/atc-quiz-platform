@@ -71,10 +71,71 @@ describe('Admin — centre overview', () => {
     expect(JSON.stringify(response.body)).not.toMatch(/password|isCorrect/i);
   });
 
-  it.each(['student', 'teacher'])(
-    'is only available to the admin, not a %s',
-    async (role) => {
-      await context.api(role, 'get', '/overview').expect(403);
-    },
-  );
+  it('gives a teacher the same view limited to their own quizzes and classes', async () => {
+    // Another teacher's live quiz for 10B must not appear in this teacher's figures.
+    const foreign = await context
+      .api('other-teacher', 'post', '/quizzes', {
+        ...context.quiz(),
+        classIds: [context.secondClass.id],
+      })
+      .expect(201);
+    await context
+      .api('other-teacher', 'post', `/quizzes/${foreign.body.id}/publish`)
+      .expect(200);
+
+    const response = await context
+      .api('teacher', 'get', '/overview')
+      .expect(200);
+    expect(response.body.scope).toBe('TEACHER');
+    expect(response.body.teachers).toEqual([]);
+    expect(response.body.classes.map((c: { name: string }) => c.name)).toEqual([
+      '10A',
+    ]);
+    expect(
+      response.body.quizzes.map((q: { id: string }) => q.id),
+    ).not.toContain(foreign.body.id);
+    expect(response.body.quizzes[0]).toMatchObject({
+      open: true,
+      expected: 1,
+      completed: 1,
+      notStarted: 0,
+    });
+    expect(
+      response.body.recent.every(
+        (r: { quiz: { id: string } }) => r.quiz.id !== foreign.body.id,
+      ),
+    ).toBe(true);
+  });
+
+  it('grades abandoned attempts whose time is up before reporting', async () => {
+    const quiz = await publish();
+    const attempt = await context
+      .api('student', 'post', `/student/quizzes/${quiz}/attempt`)
+      .expect(200);
+    // The student walked away: move the deadline (and grace period) into the past.
+    await context.db.attempt.update({
+      where: { id: attempt.body.id },
+      data: {
+        startedAt: new Date(Date.now() - 3_600_000),
+        deadlineAt: new Date(Date.now() - 60_000),
+      },
+    });
+    const response = await context
+      .api('teacher', 'get', '/overview')
+      .expect(200);
+    expect(
+      response.body.quizzes.find((q: { id: string }) => q.id === quiz),
+    ).toMatchObject({ completed: 1, inProgress: 0 });
+    expect(
+      (
+        await context.db.attempt.findUniqueOrThrow({
+          where: { id: attempt.body.id },
+        })
+      ).status,
+    ).toBe('EXPIRED');
+  });
+
+  it('is not available to students', async () => {
+    await context.api('student', 'get', '/overview').expect(403);
+  });
 });
