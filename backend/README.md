@@ -3,7 +3,8 @@
 NestJS + TypeScript, PostgreSQL and Prisma. Implemented so far: the data model,
 transactional CSV import/demo seed, cookie-based JWT login/logout/current user,
 role guards, teacher/admin quiz management, timed student attempts with scoring,
-teacher/admin results with CSV export, and a database-backed health endpoint.
+teacher/admin results with CSV export, admin account management and centre overview,
+and a database-backed health endpoint.
 
 ## Local setup
 
@@ -22,7 +23,7 @@ npm run start:dev
 
 In PowerShell use `npm.cmd` if the `npm.ps1` wrapper is blocked.
 The API runs on `http://localhost:3000/api` by default. Verify it with
-`GET /api/health`. Full frontend/backend Docker startup is a later stage.
+`GET /api/health`. To run the whole app (database, API and web) use `docker compose up --build` from the repository root; see the root README.
 
 ## Documentation
 

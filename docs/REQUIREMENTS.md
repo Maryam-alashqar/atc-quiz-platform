@@ -41,20 +41,20 @@ A mobile-first, bilingual (Arabic/English) quiz platform for a tutoring centre. 
 
 | ID | Requirement | Status |
 | --- | --- | --- |
-| FR-01 | Users log in; at minimum Student and Teacher roles exist | ✅ backend |
-| FR-02 | Students see quizzes available to them | ✅ backend |
-| FR-03 | A quiz has a time limit, typically 20 minutes | ✅ backend |
-| FR-04 | A quiz has an opening and closing date/time | ✅ backend |
-| FR-05 | Students take multiple-choice quizzes | ✅ backend |
-| FR-06 | Each question has four options | ✅ backend |
-| FR-07 | Each question has its own point value | ✅ backend |
-| FR-08 | A student cannot take the same quiz twice | ✅ backend |
-| FR-09 | Students see their score after completing a quiz | ✅ backend |
-| FR-10 | Teachers enter/create quizzes | ✅ backend |
-| FR-11 | Negative marking can be enabled or disabled per quiz | ✅ backend |
-| FR-12 | Teachers see how students performed | ✅ backend |
-| FR-13 | Arabic names and Arabic quiz content work correctly | ✅ backend · ⏳ RTL UI |
-| FR-14 | The interface works well on phones | ⏳ frontend |
+| FR-01 | Users log in; at minimum Student and Teacher roles exist | ✅ |
+| FR-02 | Students see quizzes available to them | ✅ |
+| FR-03 | A quiz has a time limit, typically 20 minutes | ✅ |
+| FR-04 | A quiz has an opening and closing date/time | ✅ |
+| FR-05 | Students take multiple-choice quizzes | ✅ |
+| FR-06 | Each question has four options | ✅ |
+| FR-07 | Each question has its own point value | ✅ |
+| FR-08 | A student cannot take the same quiz twice | ✅ |
+| FR-09 | Students see their score after completing a quiz | ✅ |
+| FR-10 | Teachers enter/create quizzes | ✅ |
+| FR-11 | Negative marking can be enabled or disabled per quiz | ✅ |
+| FR-12 | Teachers see how students performed | ✅ |
+| FR-13 | Arabic names and Arabic quiz content work correctly | ✅ |
+| FR-14 | The interface works well on phones | ✅ |
 | FR-15 | Sample data: classes 10A, 10B, 11A, ~20 students each, four teachers | ✅ |
 | FR-16 | A realistic sample quiz: ~15 questions, four options each | ✅ |
 | FR-17 | Sample data is loadable, since real data will arrive as spreadsheets | ✅ CSV importer |
@@ -118,7 +118,7 @@ Each case below is enforced on the server and covered by an automated test.
 - A teacher reading or editing another teacher's quiz
 - Negative marking pushing a score below zero
 - Tampered, expired or wrong-algorithm JWTs, and bearer tokens instead of the cookie
-- Arabic text, long question text and small phone screens breaking the layout (⏳ frontend)
+- Arabic text, long question text and small phone screens breaking the layout (checked in a browser at 390px and 1280px, in both languages)
 
 ## 8. API scope
 
@@ -145,6 +145,12 @@ POST /quizzes/:id/publish
 GET  /quizzes/:id/results
 GET  /quizzes/:id/results/export       CSV with UTF-8 BOM, so Arabic opens correctly in Excel
 GET  /classes
+
+Admin
+GET  /overview                         head counts, participation per class and teacher, latest submissions
+GET/POST /users                        list (search, role, class) / create a student or teacher
+PATCH    /users/:id                    rename, move a student to another class
+POST     /users/:id/password           set a new password
 ```
 
 Endpoint details are in [`backend/docs/`](../backend/docs/).
@@ -170,7 +176,7 @@ Loaded from `backend/prisma/data/*.csv` through the importer. The data set has 3
 | Shared | Login · App shell with role-based navigation · Language/direction toggle · Loading, empty and error states |
 | Student | Dashboard (open / upcoming / completed) · Quiz details + start confirmation · Quiz player (one question per screen on phones, question navigator, save indicator, sticky countdown, auto-submit at zero, resume after refresh) · Result page (score + percentage) |
 | Teacher | Quiz list with status · Quiz editor (details, classes, window, duration, marking, 15 questions × 4 options, points; read-only fields once attempts exist) · Publish · Results table + summary + CSV export |
-| Admin | All quizzes across teachers · Results for any quiz |
+| Admin | Dashboard (participation by class and teacher, quiz status, latest submissions) · Users (add, edit, reset password) · All quizzes and results · Create a quiz for a chosen teacher |
 
 The API is the only source of truth for time: the countdown uses `deadlineAt` and `serverTime` from the API, so a wrong clock on the device cannot extend the quiz.
 
@@ -186,12 +192,13 @@ The API is the only source of truth for time: the countdown uses `deadlineAt` an
 | 5 | Student attempts + scoring | ✅ |
 | 6 | Teacher/Admin results + CSV export | ✅ |
 | 7 | E2E tests for abuse/correctness cases | ✅ |
-| 8 | Backend Dockerfile: migrate, seed and start automatically | ⏳ |
-| 9 | Frontend: design system, auth, app shell | ⏳ |
-| 10 | Frontend: student flow | ⏳ |
-| 11 | Frontend: teacher/admin flow | ⏳ |
-| 12 | Full `docker compose up --build` (db + backend + frontend) | ⏳ |
-| 13 | Root README, DECISIONS.md, AI_USAGE.md final pass | ⏳ |
+| 8 | Backend Dockerfile: migrate, seed and start automatically | ✅ |
+| 9 | Frontend: design system, auth, app shell | ✅ |
+| 10 | Frontend: student flow | ✅ |
+| 11 | Frontend: teacher/admin flow | ✅ |
+| 12 | Full `docker compose up --build` (db + backend + frontend) | ✅ |
+| 13 | Root README, DECISIONS.md, AI_USAGE.md final pass | ✅ |
+| 14 | Admin: account management and centre dashboard (added after testing the teacher flow) | ✅ |
 
 ## 12. Deliverables (byThursday)
 
