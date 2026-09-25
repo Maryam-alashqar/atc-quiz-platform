@@ -23,7 +23,7 @@ I used AI coding agents for most of the implementation. I set the scope, made th
 2. **Backend before frontend, one stage per branch.** I gave Codex the agreed scope document and had it implement the backend stages in order: schema, import, auth, quizzes, attempts, results. Each stage was built on its own `feat/...` branch. I reviewed it and ran its tests, then merged it with `--no-ff`, so the history shows each step.
 3. **Independent check before building on it.** Before starting the frontend, I had Claude Code run every backend test suite and walk through the API as a student, teacher and admin. It also tried abuse cases: another class's quiz, a cross-question option ID, a forged score, a second start, another teacher's quiz. All were rejected correctly.
 4. **A design to aim at, not a spec to copy.** I supplied a dashboard mock-up. I told Claude Code to follow the look, but not to fake anything the data can't support. It removed rank, search, notifications and the extra menu items instead of hard-coding numbers, and noted this in DECISIONS.md.
-5. **Testing it myself as a user.** I clicked through each stage in the browser and reported problems back (see below). Some features came from that testing. Several features were my requests after trying the app:
+5. **Testing it myself as a user.** I clicked through each stage in the browser and reported problems back (see below). Several features were my requests after trying the app:
    - account management and the admin dashboard: with no sign-up and ready-made accounts, the admin needs a way to add students and teachers
    - a teacher dashboard that shows who has and hasn't taken each quiz, and a list of the teacher's students
    - quizzes for a group or named students, not only whole classes
@@ -45,7 +45,7 @@ I used AI coding agents for most of the implementation. I set the scope, made th
 | Login was limited **per IP address**, 10 per minute. A whole class on the centre's Wi-Fi shares one public IP and would be locked out when a quiz starts. | Claude Code, while putting the API behind nginx | Limit per IP *and* username. The proxy is trusted only inside Docker. Two new tests. |
 | **`docker compose up` failed on a clean machine.** The lock files came from npm 11, and the Node 22 image ships npm 10. | Building from an empty Docker volume, as a reviewer would | npm 11 pinned in both images. |
 | The student dashboard was **wider than a phone screen**: grid items defaulted to their content width. | Screenshots at 390px | `min-w-0` on cards. |
-| A first draft of DECISIONS.md said the admin dashboard grades expired attempts. It doesn't. | Checking the text against the code | Corrected. |
+| A first draft of DECISIONS.md said the admin dashboard graded expired attempts, which the code didn't do at the time. | Checking the text against the code | Corrected. The dashboards were later changed to grade overdue attempts before reporting, and the text was updated to match. |
 | An unclear error when the import folder path was wrong. | Testing the documented import command in Docker | The CLI now names the missing file. |
 | After adding the quiz-audience migration, the importer's database test failed: it applied only the first migration by name. | Running every suite after the schema change, not just the new tests | The test applies all migrations in order. |
 
