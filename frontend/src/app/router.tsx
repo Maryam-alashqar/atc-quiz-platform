@@ -2,6 +2,7 @@ import { createBrowserRouter, Outlet } from 'react-router'
 import { AppShell } from '../components/layout/AppShell'
 import { AccountPage } from '../features/account/AccountPage'
 import { AdminDashboardPage } from '../features/admin/AdminDashboardPage'
+import { ImportPage } from '../features/admin/ImportPage'
 import { UsersPage } from '../features/admin/UsersPage'
 import { LoginPage } from '../features/auth/LoginPage'
 import { MyStudentsPage } from '../features/manage/MyStudentsPage'
@@ -139,6 +140,7 @@ export const router = createBrowserRouter([
                 element: <UsersPage />,
                 handle: { title: 'nav.users' },
               },
+              { path: 'import', element: <ImportPage />, handle: { title: 'import.title' } },
             ],
           },
           // Every role: change one's own password.

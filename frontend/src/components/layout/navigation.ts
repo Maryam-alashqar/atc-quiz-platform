@@ -1,4 +1,14 @@
-import { BarChart3, ClipboardList, FilePlus2, FileText, GraduationCap, House, Users, type LucideIcon } from 'lucide-react'
+import {
+  BarChart3,
+  ClipboardList,
+  FilePlus2,
+  FileSpreadsheet,
+  FileText,
+  GraduationCap,
+  House,
+  Users,
+  type LucideIcon,
+} from 'lucide-react'
 import type { Role } from '../../api/types'
 import type { MessageKey } from '../../i18n/en'
 
@@ -25,6 +35,7 @@ export const navigation: Record<Role, NavItem[]> = {
   ADMIN: [
     { to: '/admin', label: 'nav.home', icon: House, end: true },
     { to: '/admin/users', label: 'nav.users', icon: Users },
+    { to: '/admin/import', label: 'nav.import', icon: FileSpreadsheet },
     { to: '/manage/quizzes', label: 'nav.allQuizzes', icon: ClipboardList, end: true },
     { to: '/manage/quizzes/new', label: 'nav.newQuiz', icon: FilePlus2 },
   ],
