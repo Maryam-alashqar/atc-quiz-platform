@@ -1,4 +1,4 @@
-import type { NegativeMarking, QuizInput, QuizLanguage, TeacherQuizDetail } from '../../api/types'
+import type { NegativeMarking, QuizAudience, QuizInput, QuizLanguage, StudentRef, TeacherQuizDetail } from '../../api/types'
 import type { MessageKey } from '../../i18n/en'
 import { ammanLocalToIso, isoToAmmanLocal } from '../../lib/time'
 
@@ -15,7 +15,10 @@ export interface QuizDraft {
   title: string
   description: string
   language: QuizLanguage
+  /** Whole classes, or only the students named in `students`. */
+  audience: QuizAudience
   classIds: string[]
+  students: StudentRef[]
   opensAt: string // datetime-local, Amman time
   closesAt: string
   durationMinutes: string
@@ -37,7 +40,9 @@ export function emptyDraft(): QuizDraft {
     title: '',
     description: '',
     language: 'EN',
+    audience: 'CLASSES',
     classIds: [],
+    students: [],
     opensAt: '',
     closesAt: '',
     durationMinutes: '20',
@@ -61,7 +66,9 @@ export function draftFromQuiz(quiz: TeacherQuizDetail): QuizDraft {
     title: quiz.title,
     description: quiz.description ?? '',
     language: quiz.language,
+    audience: quiz.audience,
     classIds: quiz.classes.map((c) => c.id),
+    students: quiz.students,
     opensAt: isoToAmmanLocal(quiz.opensAt),
     closesAt: isoToAmmanLocal(quiz.closesAt),
     durationMinutes: String(quiz.durationMinutes),
@@ -96,7 +103,10 @@ export function toQuizInput(draft: QuizDraft): QuizInput {
     title: draft.title.trim(),
     description: draft.description.trim() || null,
     language: draft.language,
+    audience: draft.audience,
+    // Both lists are sent; the API only grants access through the one matching `audience`.
     classIds: draft.classIds,
+    studentIds: draft.students.map((student) => student.id),
     opensAt: ammanLocalToIso(draft.opensAt) ?? undefined,
     closesAt: ammanLocalToIso(draft.closesAt) ?? undefined,
     durationMinutes: Number(draft.durationMinutes),
@@ -147,7 +157,8 @@ export function saveIssues(draft: QuizDraft): Issue[] {
 /** Extra requirements before students can see the quiz (mirrors the API's publish rules). */
 export function publishIssues(draft: QuizDraft): Issue[] {
   const issues = saveIssues(draft)
-  if (draft.classIds.length === 0) issues.push({ key: 'editor.issue.classes' })
+  if (draft.audience === 'CLASSES' && draft.classIds.length === 0) issues.push({ key: 'editor.issue.classes' })
+  if (draft.audience === 'STUDENTS' && draft.students.length === 0) issues.push({ key: 'editor.issue.students' })
   if (draft.questions.length === 0) issues.push({ key: 'editor.issue.noQuestions' })
   const closes = ammanLocalToIso(draft.closesAt)
   if (closes && Date.parse(closes) <= Date.now()) issues.push({ key: 'editor.issue.closed' })

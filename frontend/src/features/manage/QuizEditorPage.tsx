@@ -13,6 +13,7 @@ import { Dialog } from '../../components/ui/Dialog'
 import { ErrorState, Spinner } from '../../components/ui/States'
 import { useI18n } from '../../i18n/context'
 import { liveState } from './liveState'
+import { StudentPicker } from './StudentPicker'
 import {
   draftFromQuiz,
   emptyDraft,
@@ -328,7 +329,38 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
                 ))}
               </div>
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <span className="text-sm font-semibold">{t('editor.audience')}</span>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                {(['CLASSES', 'STUDENTS'] as const).map((audience) => (
+                  <label
+                    key={audience}
+                    className={`flex min-h-11 flex-1 cursor-pointer items-center gap-3 rounded-xl border px-4 py-2 has-[:disabled]:cursor-not-allowed ${
+                      draft.audience === audience ? 'border-primary bg-sky-soft' : 'border-line'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="audience"
+                      className="size-4 accent-primary"
+                      checked={draft.audience === audience}
+                      onChange={() => update({ audience })}
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold text-ink">{t(`editor.audience.${audience}`)}</span>
+                      <span className="block text-xs text-muted">{t(`editor.audience.${audience}.hint`)}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            {draft.audience === 'STUDENTS' ? (
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <span className="text-sm font-semibold">{t('editor.namedStudents', { n: draft.students.length })}</span>
+                <StudentPicker selected={draft.students} onChange={(students) => update({ students })} disabled={locked} />
+              </div>
+            ) : (
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
               <span className="text-sm font-semibold">{t('editor.classes')}</span>
               {classes.isPending ? (
                 <Spinner />
@@ -358,6 +390,7 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
                 </div>
               )}
             </div>
+            )}
           </fieldset>
         </div>
       </Section>

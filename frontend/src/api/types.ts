@@ -5,6 +5,15 @@ export type QuizLanguage = 'AR' | 'EN'
 export type QuizStatus = 'DRAFT' | 'PUBLISHED'
 export type NegativeMarking = 'NONE' | 'FRACTION' | 'FIXED'
 export type AttemptStatus = 'IN_PROGRESS' | 'SUBMITTED' | 'EXPIRED'
+/** CLASSES: everyone in the assigned classes. STUDENTS: only the named students. */
+export type QuizAudience = 'CLASSES' | 'STUDENTS'
+
+export interface StudentRef {
+  id: string
+  username: string
+  name: string
+  class: ClassRoom | null
+}
 
 export interface User {
   id: string
@@ -97,9 +106,11 @@ export interface TeacherQuizSummary extends QuizMeta {
   opensAt: string
   closesAt: string
   status: QuizStatus
+  audience: QuizAudience
   classes: ClassRoom[]
   questionCount: number
   attemptCount: number
+  studentCount: number
   createdAt: string
   updatedAt: string
 }
@@ -120,6 +131,7 @@ export interface TeacherQuestion {
 }
 
 export interface TeacherQuizDetail extends TeacherQuizSummary {
+  students: StudentRef[]
   questions: TeacherQuestion[]
   maxScore: string
 }
@@ -133,7 +145,9 @@ export interface QuizInput {
   closesAt?: string
   negativeMarking?: NegativeMarking
   penaltyValue?: string
+  audience?: QuizAudience
   classIds?: string[]
+  studentIds?: string[]
   teacherId?: string
   questions?: {
     prompt: string
@@ -165,4 +179,40 @@ export interface QuizResults extends Page<ResultRow> {
     lowestScore: string | null
     highestScore: string | null
   }
+}
+
+export interface RosterRow {
+  student: StudentRef
+  attempt: {
+    id: string
+    status: AttemptStatus
+    startedAt: string
+    submittedAt: string | null
+    score: string | null
+    maxScore: string
+    percentage: string | null
+  } | null
+}
+
+export interface QuizRoster {
+  quiz: {
+    id: string
+    title: string
+    status: QuizStatus
+    audience: QuizAudience
+    opensAt: string
+    closesAt: string
+    classes: ClassRoom[]
+  }
+  summary: { assigned: number; notStarted: number; inProgress: number; submitted: number; expired: number }
+  items: RosterRow[]
+}
+
+export interface StudentProgressRow {
+  student: StudentRef
+  assigned: number
+  completed: number
+  openNotStarted: number
+  missed: number
+  averagePercent: number | null
 }

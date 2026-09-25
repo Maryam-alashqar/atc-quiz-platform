@@ -1,6 +1,17 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './client'
-import type { ClassRoom, Page, QuizInput, QuizResults, QuizStatus, TeacherQuizDetail, TeacherQuizSummary } from './types'
+import type {
+  ClassRoom,
+  Page,
+  QuizInput,
+  QuizResults,
+  QuizRoster,
+  QuizStatus,
+  StudentProgressRow,
+  StudentRef,
+  TeacherQuizDetail,
+  TeacherQuizSummary,
+} from './types'
 
 export const manageKeys = {
   all: ['manage'] as const,
@@ -76,3 +87,32 @@ export function useQuizResults(id: string, page: number) {
 }
 
 export const resultsExportUrl = (id: string) => `/api/quizzes/${id}/results/export`
+
+/** Every student the quiz is meant for, with their attempt or none (who has not started). */
+export function useQuizRoster(id: string) {
+  return useQuery({
+    queryKey: ['manage', 'roster', id],
+    queryFn: () => api<QuizRoster>('GET', `/quizzes/${id}/results/students`),
+  })
+}
+
+/** A teacher's students (their classes plus anyone they named) with progress on their quizzes. */
+export function useMyStudents() {
+  return useQuery({
+    queryKey: ['manage', 'my-students'],
+    queryFn: () => api<{ serverTime: string; items: StudentProgressRow[] }>('GET', '/overview/students'),
+  })
+}
+
+/** Read-only lookup used to name students on a quiz. */
+export function useStudentSearch(search: string, classId: string, enabled: boolean) {
+  const params = new URLSearchParams()
+  if (search.trim()) params.set('search', search.trim())
+  if (classId) params.set('classId', classId)
+  return useQuery({
+    queryKey: ['manage', 'student-search', search.trim(), classId],
+    queryFn: () => api<{ items: StudentRef[] }>('GET', `/students?${params}`),
+    enabled,
+    placeholderData: keepPreviousData,
+  })
+}

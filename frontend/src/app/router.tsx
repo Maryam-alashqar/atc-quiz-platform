@@ -1,8 +1,9 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router'
+import { createBrowserRouter, Outlet } from 'react-router'
 import { AppShell } from '../components/layout/AppShell'
 import { AdminDashboardPage } from '../features/admin/AdminDashboardPage'
 import { UsersPage } from '../features/admin/UsersPage'
 import { LoginPage } from '../features/auth/LoginPage'
+import { MyStudentsPage } from '../features/manage/MyStudentsPage'
 import { QuizEditorPage } from '../features/manage/QuizEditorPage'
 import { QuizListPage } from '../features/manage/QuizListPage'
 import { QuizResultsPage } from '../features/manage/QuizResultsPage'
@@ -14,7 +15,7 @@ import { QuizPlayerPage } from '../features/student/QuizPlayerPage'
 import { QuizzesPage } from '../features/student/QuizzesPage'
 import { ResultsPage } from '../features/student/ResultsPage'
 import { RequireAuth, RequireRole } from './guards'
-import { HomeRedirect } from './HomeRedirect'
+import { HomeRedirect, ManageHome } from './HomeRedirect'
 
 export const router = createBrowserRouter([
   { path: '/', element: <HomeRedirect /> },
@@ -58,7 +59,8 @@ export const router = createBrowserRouter([
           </RequireRole>
         ),
         children: [
-          { index: true, element: <Navigate to="quizzes" replace /> },
+          { index: true, element: <ManageHome /> },
+          { path: 'students', element: <MyStudentsPage /> },
           { path: 'quizzes', element: <QuizListPage /> },
           { path: 'quizzes/new', element: <QuizEditorPage /> },
           { path: 'quizzes/:id/edit', element: <QuizEditorPage /> },
