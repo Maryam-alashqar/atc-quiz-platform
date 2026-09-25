@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate, Outlet } from 'react-router'
 import { AppShell } from '../components/layout/AppShell'
+import { AdminDashboardPage } from '../features/admin/AdminDashboardPage'
+import { UsersPage } from '../features/admin/UsersPage'
 import { LoginPage } from '../features/auth/LoginPage'
 import { QuizEditorPage } from '../features/manage/QuizEditorPage'
 import { QuizListPage } from '../features/manage/QuizListPage'
@@ -58,17 +60,21 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="quizzes" replace /> },
           { path: 'quizzes', element: <QuizListPage /> },
-          {
-            // Creating needs a teacher as owner; the admin oversees, edits and publishes.
-            path: 'quizzes/new',
-            element: (
-              <RequireRole roles={['TEACHER']}>
-                <QuizEditorPage />
-              </RequireRole>
-            ),
-          },
+          { path: 'quizzes/new', element: <QuizEditorPage /> },
           { path: 'quizzes/:id/edit', element: <QuizEditorPage /> },
           { path: 'quizzes/:id/results', element: <QuizResultsPage /> },
+        ],
+      },
+      {
+        path: 'admin',
+        element: (
+          <RequireRole roles={['ADMIN']}>
+            <Outlet />
+          </RequireRole>
+        ),
+        children: [
+          { index: true, element: <AdminDashboardPage /> },
+          { path: 'users', element: <UsersPage /> },
         ],
       },
       { path: '*', element: <NotFoundPage /> },

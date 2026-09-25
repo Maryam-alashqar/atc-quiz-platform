@@ -74,12 +74,10 @@ export function QuizListPage() {
           <h1 className="font-serif text-3xl font-bold text-ink sm:text-4xl">{t(isAdmin ? 'nav.allQuizzes' : 'nav.quizzes')}</h1>
           <p className="mt-1 text-muted">{t(isAdmin ? 'manage.subtitleAdmin' : 'manage.subtitle')}</p>
         </div>
-        {!isAdmin && (
-          <ButtonLink to="/manage/quizzes/new">
-            <FilePlus2 className="size-4" aria-hidden="true" />
-            {t('nav.newQuiz')}
-          </ButtonLink>
-        )}
+        <ButtonLink to="/manage/quizzes/new">
+          <FilePlus2 className="size-4" aria-hidden="true" />
+          {t('nav.newQuiz')}
+        </ButtonLink>
       </header>
 
       <div role="tablist" className="flex gap-1 self-start rounded-full bg-surface p-1 shadow-card">
@@ -108,11 +106,9 @@ export function QuizListPage() {
       ) : quizzes.data.items.length === 0 ? (
         <Card>
           <EmptyState title={t('manage.empty')}>
-            {!isAdmin && (
-              <Link to="/manage/quizzes/new" className="font-semibold text-secondary">
-                {t('manage.emptyCta')}
-              </Link>
-            )}
+            <Link to="/manage/quizzes/new" className="font-semibold text-secondary">
+              {t('manage.emptyCta')}
+            </Link>
           </EmptyState>
         </Card>
       ) : (
