@@ -115,4 +115,42 @@ describe('Authentication — login rate limiting', () => {
     expect(response.headers['set-cookie']).toBeUndefined();
     await request(context.app.getHttpServer()).get('/api/health').expect(200);
   });
+
+  it('limits each account separately, so classmates on the same Wi-Fi are not locked out', async () => {
+    await context.login('teacher', 'wrong-password').expect(401);
+    await context.login('teacher', 'wrong-password').expect(401);
+    await context.login('teacher', 'wrong-password').expect(429);
+    // Same IP, different account: still allowed.
+    await context.login('admin').expect(200);
+    // Username casing and spaces cannot be used to get a fresh allowance.
+    await context.login('  TEACHER ', 'wrong-password').expect(429);
+  });
+});
+
+describe('Authentication — behind a trusted proxy', () => {
+  let context: AuthTestApp;
+  beforeAll(async () => {
+    context = await createAuthTestApp({
+      LOGIN_RATE_LIMIT: 1,
+      TRUST_PROXY: true,
+    });
+  });
+  afterAll(async () => {
+    await context?.close();
+  });
+
+  it('uses the forwarded client address, so different devices get their own allowance', async () => {
+    await context
+      .login('student', 'wrong-password')
+      .set('X-Forwarded-For', '198.51.100.1')
+      .expect(401);
+    await context
+      .login('student', 'wrong-password')
+      .set('X-Forwarded-For', '198.51.100.1')
+      .expect(429);
+    await context
+      .login('student', 'wrong-password')
+      .set('X-Forwarded-For', '198.51.100.2')
+      .expect(401);
+  });
 });

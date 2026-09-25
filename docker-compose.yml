@@ -1,21 +1,65 @@
+# One command for reviewers:  docker compose up --build
+# Then open http://localhost:8080  (demo accounts are in README.md)
+#
+# This is a local environment over plain HTTP. A real deployment runs the backend with
+# NODE_ENV=production behind HTTPS (the API then requires an HTTPS origin and Secure cookies).
+
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: atc_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: atc_user
       POSTGRES_PASSWORD: atc_password
       POSTGRES_DB: atc_quiz
+    # Published only for running the backend outside Docker (npm run start:dev).
+    # Change the host side with POSTGRES_PORT if 5432 is already taken.
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U atc_user -d atc_quiz"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://atc_user:atc_password@postgres:5432/atc_quiz?schema=public
+      # Plain HTTP on localhost: see the note at the top.
+      NODE_ENV: development
+      PORT: 3000
+      # Must match the address in the browser exactly (localhost, not 127.0.0.1).
+      FRONTEND_ORIGIN: http://localhost:${APP_PORT:-8080}
+      # Leave empty to get a random key per start; set it to keep sessions across restarts.
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_TTL_SECONDS: 3600
+      LOGIN_RATE_LIMIT: 10
+      # nginx is the only hop in front of the API.
+      TRUST_PROXY: "true"
+      # Migrations run on every start; the seed is idempotent and keeps existing data.
+      SEED_ON_START: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-8080}:80"
 
 volumes:
   postgres_data:

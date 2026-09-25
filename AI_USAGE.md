@@ -1,51 +1,72 @@
 # AI usage
 
-Codex assisted with reviewing the supplied brief and the user's implementation
-scope, inspecting the React/NestJS starter, and implementing the database and
-CSV-import, authentication, quiz-management and student-attempt stages. The user chose the stack
-and scope, requested backend-first work in separate stages, and approved merging
-the completed database, CSV, authentication and quiz-management branches into main.
+I used AI coding agents for most of the implementation. I set the scope, made the product decisions, split the work into stages, and reviewed and tested each stage before merging it. This file explains who did what and how the output was checked, including where the tools got things wrong.
 
-Codex authored the Prisma schema, SQL migration/check constraints, database
-regression checks, CSV parser/importer, fictional demo records/questions, password
-hash helpers, Nest configuration/Prisma integration, cookie authentication,
-authorization guards, quiz management, student attempts/scoring and supporting documentation. The user requested clear
-feature-test names; tests were grouped and named by observable behavior. The demo seed calls the same importer
-as ordinary CSV imports; no real student records were used.
+## Tools
 
-Verification performed during these stages:
+| Tool | Used for |
+| --- | --- |
+| **OpenAI Codex** | The backend: Prisma schema and migration, CSV importer and seed, cookie/JWT authentication and role guards, quiz management and publishing rules, timed attempts and scoring, results and CSV export, with their tests and `backend/docs/`. |
+| **Claude Code** (Claude Opus) | Reviewing the brief and my scope document, an independent check of the Codex backend, the whole React frontend, the admin features (account management, dashboard), per-account login rate limiting, Docker Compose, and the final documentation. |
+| **Prisma agent skills** | Prisma's official reference skills (`prisma/skills`, see `backend/skills-lock.json`), installed while setting up Prisma. The installer writes a copy for each supported agent, which is why `backend/.agents/`, `backend/.claude/skills/` and `backend/.windsurf/` exist. Windsurf itself was not used. |
 
-- Prisma schema validation, client generation, migration application and status,
-  and a schema comparison against the running PostgreSQL database.
-- SQL regression checks for invalid relations, duplicate attempts/answers,
-  numeric/timing constraints, deletion protection, Arabic and decimal storage.
-- Unit tests for CSV format/reference/value validation and password verification.
-- PostgreSQL integration tests in a disposable schema for simultaneous imports,
-  exact record counts, repeat-import preservation, and atomic rollback on conflicts.
-- Backend build, TypeScript checking and lint.
-- Real Nest/PostgreSQL HTTP tests for student/teacher/admin login, safe cookies and
-  responses, malformed credentials, JWT expiry/signature/claims, logout, role
-  restrictions and role changes, trusted origins, CORS and login throttling.
-- A compiled-server smoke check against the seeded development database: health,
-  login/current user/logout, untrusted-origin rejection and absence of test routes.
-- Quiz HTTP tests for draft CRUD, classes, pagination, publishing, strict nested
-  validation, teacher ownership, admin access, and edit/deletion protection after
-  attempts exist. A coordinated database concurrency test verifies that a racing
-  edit waits for an attempt insert and then rejects the grading change.
+## How I directed the work
 
-The user also reported that the database-stage verification commands worked.
-AI-generated sample questions are illustrative demo content, not a reviewed
-curriculum. The starter endpoint/test was replaced by a database-backed health
-endpoint and feature-level auth/quiz tests. Student attempt timing and scoring
-API tests cover availability, persistence, weighted and negative scoring, server
-deadline/grace boundaries, lazy expiry, ownership, input validation, answer-key
-redaction and concurrent start/save/submit requests. A coordinated quiz-lock test
-checks that starting waits for a grading edit and reads its committed points.
+1. **Scope first, code second.** I turned Nour's brief into a written requirements and scope document before any feature code. I asked Claude Code to review it. It proposed a few changes, and I accepted them into the scope:
+   - negative marking as a *fraction of each question's points*, because questions carry different points
+   - an Admin role for Nour
+   - username instead of email login
+   - saving every answer immediately
+   - seeding through the same importer that real spreadsheets will use
 
-Codex also implemented teacher/admin result reporting and CSV export with
-ownership checks before lazy expiry, paginated rows and quiz-wide statistics.
-Verification covers access restrictions, expiry from saved answers, safe response
-fields, pagination, empty reports, Arabic CSV round-tripping and spreadsheet
-formula protection. The results feature reuses the existing attempt scoring logic.
+   The result is [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md). For the tests, I asked for scenario names that read as behaviour ("rejects a second attempt …"), so the test report doubles as a checklist.
+2. **Backend before frontend, one stage per branch.** Each stage (schema, import, auth, quizzes, attempts, results) was built on its own `feat/...` branch. I reviewed it and ran its tests, then merged it with `--no-ff`, so the history shows each step.
+3. **Independent check before building on it.** Before starting the frontend, I had Claude Code run every backend test suite and walk through the API as a student, teacher and admin. It also tried abuse cases: another class's quiz, a cross-question option ID, a forged score, a second start, another teacher's quiz. All were rejected correctly.
+4. **A design to aim at, not a spec to copy.** I supplied a dashboard mock-up and images. I told Claude Code to follow the look, but not to fake anything the data can't support. It removed rank, search, notifications and the extra menu items instead of hard-coding numbers, and noted this in DECISIONS.md.
+5. **Testing it myself as a user.** I clicked through each stage in the browser and reported problems back (see below). Some features came from that testing. Account management and the admin dashboard were my requests: with no sign-up and ready-made accounts, the admin needs a way to add students and teachers, and the admin home should match the design.
+6. **I made the product decisions.** When there was a real choice, the agent asked and I chose:
+   - no forced password change on first login
+   - no account deactivation for now
+   - how the admin's quiz ownership works
+   - when to push and merge
 
-This file will be updated as further stages are implemented and verified.
+## Where the AI got it wrong, and how it was caught
+
+| Problem | Caught by | Fix |
+| --- | --- | --- |
+| The **sign-out button did nothing** visible. The code cleared the whole query cache, including the session query the page was watching. The agent's own browser check had reloaded the page, which hid the bug. | Me, testing in the browser | The session is now updated in place, plus a regression test that watches the session during sign-out. |
+| **Adding a teacher** only worked from the Teachers tab, and the button said "Add student" everywhere else. | Me | One "Add user" button, with a Student/Teacher choice in the form. |
+| Converting a penalty of "33.33%" to the API's fraction gave `33.33` instead of `0.3333`. | The agent's unit test, before commit | Rewrote the conversion; the test is kept. |
+| Login was limited **per IP address**, 10 per minute. A whole class on the centre's Wi-Fi shares one public IP and would be locked out when a quiz starts. | Claude Code, while putting the API behind nginx | Limit per IP *and* username. The proxy is trusted only inside Docker. Two new tests. |
+| **`docker compose up` failed on a clean machine.** The lock files came from npm 11, and the Node 22 image ships npm 10. | Building from an empty Docker volume, as a reviewer would | npm 11 pinned in both images. |
+| The student dashboard was **wider than a phone screen**: grid items defaulted to their content width. | Screenshots at 390px | `min-w-0` on cards. |
+| A first draft of DECISIONS.md said the admin dashboard grades expired attempts. It doesn't. | Checking the text against the code | Corrected. |
+| An unclear error when the import folder path was wrong. | Testing the documented import command in Docker | The CLI now names the missing file. |
+
+## How the output was checked
+
+- **Automated tests**, run after every stage:
+  - Backend: 71 unit tests, 170 end-to-end API tests against real PostgreSQL (each file in its own throwaway schema), and 4 database tests for the importer.
+  - Frontend: 44 unit tests.
+  - The most important checks are in the backend e2e suite: one attempt per student including concurrent starts, deadlines and the grace period, scoring with and without negative marking, answer keys never sent to students, and teacher ownership.
+- **Typecheck and lint** on both apps before each commit.
+- **Real browser runs.** Claude Code drove Microsoft Edge (headless, via puppeteer) with scripts that:
+  - sign in as each role
+  - take a quiz and reload the page mid-quiz, to confirm the timer and answers survive
+  - let a one-minute quiz run out, to confirm auto-submit and the score
+  - create quizzes and accounts
+  - sign out
+
+  It took screenshots at phone (390px) and desktop (1280px) widths in both Arabic and English, and checked them for layout problems.
+- **Manual review.** I tried each stage myself before merging.
+- **A clean Docker run.** From an empty volume: build, migrate, seed, take a quiz through nginx, restart (data kept), and import a CSV folder.
+
+## Configuration committed for the agents
+
+- [CLAUDE.md](CLAUDE.md): project conventions for Claude Code (stack, commands, rules such as "scoring only on the server" and "every UI string in both dictionaries").
+- `backend/skills-lock.json` and the skill folders: the Prisma reference skills described above.
+
+## Limits
+
+- The sample questions and Arabic names were generated. They are realistic demo content, not reviewed curriculum.
+- The browser scripts used for checking were not committed as automated tests. Turning them into Playwright tests in CI is on the next-week list in DECISIONS.md.

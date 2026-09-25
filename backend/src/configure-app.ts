@@ -6,6 +6,9 @@ import type { Environment } from './config/environment.js';
 /** Shared by production bootstrap and HTTP integration tests. */
 export function configureApp(app: INestApplication): void {
   const config = app.get<ConfigService<Environment, true>>(ConfigService);
+  // Only one hop: nginx in Docker. Off by default, so a client cannot forge its IP.
+  if (config.get('TRUST_PROXY', { infer: true }))
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
   app.setGlobalPrefix('api');
   app.use(cookieParser());
   app.enableCors({

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createDatabaseClient } from './client.js';
 import { readDataset } from './csv.js';
@@ -38,6 +38,20 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
+  // A wrong folder path is the most common mistake: name the missing file (no contents or credentials).
+  if (
+    error instanceof Error &&
+    (error as NodeJS.ErrnoException).code === 'ENOENT'
+  ) {
+    const missing = basename(
+      String((error as NodeJS.ErrnoException).path ?? ''),
+    );
+    console.error(
+      `Cannot find ${missing || 'the CSV directory'}. Check the folder path; it must contain classes.csv, users.csv, quizzes.csv and questions.csv.`,
+    );
+    process.exitCode = 1;
+    return;
+  }
   // Prisma errors may contain query values. Do not print raw database errors or credentials.
   const message = error instanceof Error ? error.message : '';
   console.error(
