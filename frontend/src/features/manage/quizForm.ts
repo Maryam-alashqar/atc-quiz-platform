@@ -97,6 +97,11 @@ export function penaltyValue(draft: QuizDraft): string {
   return draft.negativeMarking === 'FRACTION' ? percentToFraction(draft.penalty) : draft.penalty.trim()
 }
 
+/** A question the teacher has not started writing: no text and no options. */
+function isBlank(question: QuestionDraft): boolean {
+  return !question.prompt.trim() && question.options.every((text) => !text.trim())
+}
+
 /** Everything the API accepts. Status and ownership are never sent: the server decides those. */
 export function toQuizInput(draft: QuizDraft): QuizInput {
   return {
@@ -112,10 +117,14 @@ export function toQuizInput(draft: QuizDraft): QuizInput {
     durationMinutes: Number(draft.durationMinutes),
     negativeMarking: draft.negativeMarking,
     penaltyValue: penaltyValue(draft),
-    questions: draft.questions.map((question) => ({
+    // A draft may be unfinished: untouched questions and empty option slots are not sent
+    // (the API rejects empty text). Publishing still requires all four options.
+    questions: draft.questions.filter((question) => !isBlank(question)).map((question) => ({
       prompt: question.prompt.trim(),
       points: question.points.trim(),
-      options: question.options.map((text, index) => ({ text: text.trim(), isCorrect: index === question.correct })),
+      options: question.options
+        .map((text, index) => ({ text: text.trim(), isCorrect: index === question.correct }))
+        .filter((option) => option.text),
     })),
   }
 }
@@ -146,6 +155,9 @@ export function saveIssues(draft: QuizDraft): Issue[] {
     if (!valid) issues.push({ key: draft.negativeMarking === 'FRACTION' ? 'editor.issue.fraction' : 'editor.issue.fixed' })
   }
   draft.questions.forEach((question, index) => {
+    if (isBlank(question)) return
+    // Options without a question can't be saved: the API needs the question text.
+    if (!question.prompt.trim()) issues.push({ key: 'editor.issue.prompt', question: index + 1 })
     const points = question.points.trim()
     if (!DECIMAL.test(points) || Number(points) <= 0) issues.push({ key: 'editor.issue.points', question: index + 1 })
     const filled = question.options.map((text) => text.trim()).filter(Boolean)
@@ -167,7 +179,10 @@ export function publishIssues(draft: QuizDraft): Issue[] {
     if (question.options.some((text) => !text.trim())) issues.push({ key: 'editor.issue.options', question: index + 1 })
     if (question.correct === null) issues.push({ key: 'editor.issue.correct', question: index + 1 })
   })
-  return issues
+  // Save checks already flag some of these (e.g. missing question text); list each problem once.
+  return issues.filter(
+    (issue, index) => issues.findIndex((other) => other.key === issue.key && other.question === issue.question) === index,
+  )
 }
 
 /** Sum of question points, shown live in the editor. */
