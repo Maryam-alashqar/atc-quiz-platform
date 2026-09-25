@@ -102,8 +102,8 @@ npm run dev                 # app on http://localhost:5173 (proxies /api to :300
 
 | Command | What it covers |
 | --- | --- |
-| `cd backend && npm test` | Scoring, timing, CSV validation, password hashing, participation and follow-up statistics, result CSV escaping |
-| `cd backend && npm run test:e2e` | The HTTP API against real PostgreSQL: auth and roles, quiz rules and locks, one attempt per student (including concurrent starts), deadlines and grace period, negative marking, answer-key redaction, ownership, named-student quizzes (a classmate who wasn't named can't see or start one), rosters, dashboards, admin accounts |
+| `cd backend && npm test` | Scoring, timing, CSV validation, reading Excel workbooks, password hashing, participation and follow-up statistics, result CSV escaping |
+| `cd backend && npm run test:e2e` | The HTTP API against real PostgreSQL: auth and roles, quiz rules and locks, one attempt per student (including concurrent starts), deadlines and grace period, negative marking, answer-key redaction, ownership, named-student quizzes (a classmate who wasn't named can't see or start one), rosters, dashboards, admin accounts, spreadsheet import (preview saves nothing, sheet-and-row errors), changing a password |
 | `cd backend && npm run test:db` | The CSV importer against PostgreSQL: concurrent imports, repeat imports, rollback |
 | `cd frontend && npm test` | Server-clock countdown, Amman-time conversion, the answer-save queue (retries, coalescing), quiz form validation and conversion, sign-out |
 
@@ -120,7 +120,8 @@ backend/            NestJS API
   src/results       per-quiz results, who has not started, CSV export
   src/users         admin account management, student lookup
   src/overview      admin and teacher dashboards, My Students
-  src/data          CSV parser, importer and CLI (seed/import)
+  src/data          CSV and Excel readers, importer and CLI (seed/import)
+  src/import        admin spreadsheet upload: check (preview) and import
   test/             e2e tests against PostgreSQL
   docs/             API notes per feature
 frontend/           React app (Vite, Tailwind), served by nginx in Docker

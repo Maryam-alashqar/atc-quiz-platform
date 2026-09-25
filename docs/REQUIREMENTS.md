@@ -89,7 +89,7 @@ The brief says what Nour wants to see ("how the students did"), but not how a sm
 | **One attempt** | Enforced both in application logic and by a unique database constraint on `(quizId, studentId)`, which also covers concurrent start requests. |
 | **Timezone** | Timestamps are stored as `timestamptz`. The UI displays them in Asia/Amman. |
 | **Quiz ownership** | A teacher manages, and sees results for, only the quizzes they created. Another teacher's quiz returns 404, not 403, so its existence is not revealed. |
-| **Draft/Published** | Students only see quizzes that are published, currently open and assigned to their class. |
+| **Draft/Published** | Students only see published quizzes meant for them (their class, or their name). Open ones can be taken; upcoming ones are listed with their opening time and can't be started early. Drafts are never shown. |
 | **Editing live quizzes** | Once any attempt has started, only the title and description can change. Questions, points, timing and marking are locked to keep grading consistent. |
 | **Score visibility** | Total score and percentage are shown right after submission. Correct answers are not revealed, to reduce answer sharing. |
 | **Language/RTL** | All text is UTF-8. Each quiz has a language (`AR`/`EN`). Arabic quizzes render RTL, and the app shell works in both directions. |
@@ -97,7 +97,7 @@ The brief says what Nour wants to see ("how the students did"), but not how a sm
 | **Login identifier** | Username, not email (e.g. `s10a-07`), because students may not have email addresses. |
 | **Answer persistence** | Each selected answer is saved to the server immediately. If connectivity drops or time runs out, scoring uses the answers already saved. |
 | **Numeric precision** | Points, penalties and scores are stored as `Decimal`, not `Float`, to avoid rounding errors with fractional penalties. |
-| **Password recovery** | Not in the MVP. Demo credentials are seeded. |
+| **Password recovery** | No email reset (students may have no email). The admin resets a forgotten password, and every user can change their own after entering the current one. |
 | **Admin** | An Admin role for Nour, with centre-wide visibility of quizzes and results. She asked to "see how the students did", and she is not a teacher. The admin also manages accounts and can create a quiz for a chosen teacher. |
 | **Accounts** | Created by the spreadsheet import or by the admin, never by sign-up. The admin sees a generated first password once, to hand over. There is no forced change on first login and no deactivation yet (see next steps). |
 | **Login limit** | Login attempts are limited per client IP *and* username, so classmates on shared Wi-Fi don't lock each other out. |
@@ -109,7 +109,7 @@ The brief says what Nour wants to see ("how the students did"), but not how a sm
 
 **Teacher:** Login → Dashboard (quizzes to follow, participation by class) → Create/edit quiz → Add ~15 questions with options and points → Choose whole classes or named students, time limit, availability window and negative marking → Publish → Results: who has not started, who finished, scores, CSV export → My Students (progress per student).
 
-**Admin:** Login → Centre dashboard (participation by class and teacher, quizzes to follow) → Users (add a student or teacher, reset a password) → All quizzes and results → Create a quiz for a chosen teacher.
+**Admin:** Login → Centre dashboard (participation by class and teacher, quizzes to follow) → Users (add a student or teacher, reset a password) → Import (upload the centre's Excel or CSV files, check, then import) → All quizzes and results → Create a quiz for a chosen teacher.
 
 ## 6. Data model (as implemented)
 
