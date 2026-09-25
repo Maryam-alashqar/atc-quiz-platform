@@ -14,4 +14,10 @@ export class OverviewController {
   get(@CurrentUser() user: AuthUser) {
     return this.overview.overview(user);
   }
+
+  @Get('students')
+  @Header('Cache-Control', 'no-store')
+  students(@CurrentUser() user: AuthUser) {
+    return this.overview.students(user);
+  }
 }

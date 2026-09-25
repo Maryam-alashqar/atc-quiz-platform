@@ -1,13 +1,18 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
-import type { NegativeMarking } from '../generated/prisma/enums.js';
+import type {
+  NegativeMarking,
+  QuizAudience,
+} from '../generated/prisma/enums.js';
 
 interface QuizRulesInput {
   opensAt: Date;
   closesAt: Date;
   negativeMarking: NegativeMarking;
   penaltyValue: string | Prisma.Decimal;
+  audience: QuizAudience;
   classIds: string[];
+  studentIds: string[];
   questions: {
     points: string | Prisma.Decimal;
     options: { text: string; isCorrect: boolean }[];
@@ -30,9 +35,13 @@ export function validateQuizRules(
       'Invalid penaltyValue for the selected negativeMarking mode',
     );
   }
-  if (published && (!quiz.classIds.length || !quiz.questions.length))
+  if (published && !quiz.questions.length)
+    throw new BadRequestException('Publishing requires at least one question');
+  if (published && quiz.audience === 'CLASSES' && !quiz.classIds.length)
+    throw new BadRequestException('Publishing requires at least one class');
+  if (published && quiz.audience === 'STUDENTS' && !quiz.studentIds.length)
     throw new BadRequestException(
-      'Publishing requires at least one class and one question',
+      'Publishing a quiz for named students requires at least one student',
     );
   for (const [index, question] of quiz.questions.entries()) {
     if (!new Prisma.Decimal(question.points).gt(0))

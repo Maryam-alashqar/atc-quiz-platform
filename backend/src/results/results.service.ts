@@ -117,6 +117,8 @@ export class ResultsService {
             status: true,
             opensAt: true,
             closesAt: true,
+            audience: true,
+            students: { select: { studentId: true } },
             classes: {
               select: { class: { select: { id: true, name: true } } },
               orderBy: { class: { name: 'asc' } },
@@ -127,7 +129,11 @@ export class ResultsService {
         const classIds = quiz.classes.map((c) => c.class.id);
         const [students, attempts] = await Promise.all([
           tx.user.findMany({
-            where: { role: 'STUDENT', classId: { in: classIds } },
+            // Named-student quizzes list exactly those students; others list their classes.
+            where:
+              quiz.audience === 'STUDENTS'
+                ? { id: { in: quiz.students.map((s) => s.studentId) } }
+                : { role: 'STUDENT', classId: { in: classIds } },
             select: resultSelect.student.select,
             orderBy: [{ class: { name: 'asc' } }, { name: 'asc' }],
           }),
@@ -156,6 +162,7 @@ export class ResultsService {
             status: quiz.status,
             opensAt: quiz.opensAt,
             closesAt: quiz.closesAt,
+            audience: quiz.audience,
             classes: quiz.classes.map((c) => c.class),
           },
           summary: {

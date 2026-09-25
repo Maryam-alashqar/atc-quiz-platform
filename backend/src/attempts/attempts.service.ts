@@ -105,6 +105,27 @@ function present(attempt: LoadedAttempt, now: Date) {
   };
 }
 
+/**
+ * The single rule for "is this quiz meant for this student": either the quiz is for whole
+ * classes and the student is in one of them, or it names this student. Every student-facing
+ * query (list, upcoming, preview, start) goes through it.
+ */
+export function assignedTo(user: AuthUser): Prisma.QuizWhereInput {
+  return {
+    OR: [
+      {
+        audience: 'CLASSES',
+        classes: {
+          some: {
+            classId: user.classId ?? '00000000-0000-0000-0000-000000000000',
+          },
+        },
+      },
+      { audience: 'STUDENTS', students: { some: { studentId: user.id } } },
+    ],
+  };
+}
+
 @Injectable()
 export class AttemptsService {
   constructor(
@@ -117,11 +138,7 @@ export class AttemptsService {
       status: 'PUBLISHED',
       opensAt: { lte: now },
       closesAt: { gt: now },
-      classes: {
-        some: {
-          classId: user.classId ?? '00000000-0000-0000-0000-000000000000',
-        },
-      },
+      ...assignedTo(user),
     };
   }
 
@@ -218,11 +235,7 @@ export class AttemptsService {
     return this.listQuizzes(user, query, now, 'opensAt', {
       status: 'PUBLISHED',
       opensAt: { gt: now },
-      classes: {
-        some: {
-          classId: user.classId ?? '00000000-0000-0000-0000-000000000000',
-        },
-      },
+      ...assignedTo(user),
     });
   }
 

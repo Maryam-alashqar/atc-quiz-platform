@@ -29,6 +29,12 @@ enum NegativeMarking {
   FIXED
 }
 
+/// Who a quiz is for: every student in the assigned classes, or a named list of students.
+enum QuizAudience {
+  CLASSES
+  STUDENTS
+}
+
 enum AttemptStatus {
   IN_PROGRESS
   SUBMITTED
@@ -36,17 +42,18 @@ enum AttemptStatus {
 }
 
 model User {
-  id           String    @id @default(uuid()) @db.Uuid
-  username     String    @unique @db.VarChar(100)
-  name         String    @db.VarChar(200)
-  passwordHash String
-  role         Role
-  classId      String?   @db.Uuid
-  class        Class?    @relation(fields: [classId], references: [id], onDelete: Restrict)
-  quizzes      Quiz[]    @relation("QuizOwner")
-  attempts     Attempt[]
-  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime  @updatedAt @db.Timestamptz(3)
+  id              String        @id @default(uuid()) @db.Uuid
+  username        String        @unique @db.VarChar(100)
+  name            String        @db.VarChar(200)
+  passwordHash    String
+  role            Role
+  classId         String?       @db.Uuid
+  class           Class?        @relation(fields: [classId], references: [id], onDelete: Restrict)
+  quizzes         Quiz[]        @relation("QuizOwner")
+  attempts        Attempt[]
+  quizAssignments QuizStudent[]
+  createdAt       DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime      @updatedAt @db.Timestamptz(3)
 
   @@index([classId])
 }
@@ -71,7 +78,9 @@ model Quiz {
   status          QuizStatus      @default(DRAFT)
   negativeMarking NegativeMarking @default(NONE)
   penaltyValue    Decimal         @default(0) @db.Decimal(12, 4)
+  audience        QuizAudience    @default(CLASSES)
   classes         QuizClass[]
+  students        QuizStudent[]
   questions       Question[]
   attempts        Attempt[]
   createdAt       DateTime        @default(now()) @db.Timestamptz(3)
@@ -89,6 +98,17 @@ model QuizClass {
 
   @@id([quizId, classId])
   @@index([classId])
+}
+
+/// Named students for a quiz whose audience is STUDENTS.
+model QuizStudent {
+  quizId    String @db.Uuid
+  studentId String @db.Uuid
+  quiz      Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@id([quizId, studentId])
+  @@index([studentId])
 }
 
 model Question {
