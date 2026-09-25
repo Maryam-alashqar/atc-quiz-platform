@@ -2,11 +2,40 @@ import { hashPassword } from '../common/security/password.js';
 import type { PrismaClient } from '../generated/prisma/client.js';
 import type { Dataset } from './csv.js';
 
-/** Append-only import. Existing users/passwords and quiz content are never overwritten. */
-export async function importDataset(db: PrismaClient, data: Dataset) {
+/** Thrown inside the transaction to roll a preview back; carries the would-be summary. */
+class DryRunRollback extends Error {
+  constructor(readonly summary: ImportSummary) {
+    super('dry run');
+  }
+}
+
+export type ImportSummary = Awaited<ReturnType<typeof runImport>>;
+
+/**
+ * Append-only import. Existing users/passwords and quiz content are never overwritten.
+ * With `dryRun`, the exact same import runs and is then rolled back, so a preview
+ * reports precisely what would be created or skipped (and any conflict) without saving.
+ */
+export async function importDataset(
+  db: PrismaClient,
+  data: Dataset,
+  options: { dryRun?: boolean } = {},
+): Promise<ImportSummary> {
+  if (!options.dryRun) return runImport(db, data, false);
+  try {
+    await runImport(db, data, true);
+  } catch (error) {
+    if (error instanceof DryRunRollback) return error.summary;
+    throw error;
+  }
+  throw new Error('Dry run did not roll back');
+}
+
+async function runImport(db: PrismaClient, data: Dataset, dryRun: boolean) {
   const hashes = new Map<string, string>();
   // Bound scrypt concurrency and perform expensive hashing outside the transaction.
-  for (let i = 0; i < data.users.length; i += 4) {
+  // A preview is rolled back, so it skips hashing and never stores these placeholders.
+  for (let i = 0; !dryRun && i < data.users.length; i += 4) {
     await Promise.all(
       data.users.slice(i, i + 4).map(async (user) => {
         hashes.set(user.username, await hashPassword(user.password));
@@ -60,7 +89,7 @@ export async function importDataset(db: PrismaClient, data: Dataset) {
               name: item.name,
               role: item.role,
               classId,
-              passwordHash: hashes.get(item.username)!,
+              passwordHash: dryRun ? 'dry-run' : hashes.get(item.username)!,
             },
           }));
         userIds.set(item.username, saved.id);
@@ -111,6 +140,7 @@ export async function importDataset(db: PrismaClient, data: Dataset) {
         summary.questionsCreated += questions.length;
         summary.optionsCreated += questions.length * 4;
       }
+      if (dryRun) throw new DryRunRollback(summary);
       return summary;
     },
     { isolationLevel: 'ReadCommitted', maxWait: 30_000, timeout: 60_000 },

@@ -10,6 +10,7 @@ import { AttemptsModule } from './attempts/attempts.module.js';
 import { ResultsModule } from './results/results.module.js';
 import { UsersModule } from './users/users.module.js';
 import { OverviewModule } from './overview/overview.module.js';
+import { ImportModule } from './import/import.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnvironment }),
@@ -21,6 +22,7 @@ import { OverviewModule } from './overview/overview.module.js';
     ResultsModule,
     UsersModule,
     OverviewModule,
+    ImportModule,
   ],
   controllers: [HealthController],
 })

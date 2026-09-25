@@ -51,6 +51,8 @@ they do not reopen expired quizzes or reset progress. No attempts are seeded.
 
 ## Importing a spreadsheet export
 
+The admin can also do this in the browser: *Import* in the admin menu checks a workbook or the four CSV files, shows what would change, then imports ([admin API](../../docs/admin.md)). The command below does the same from a terminal.
+
 Export four files as UTF-8 CSV into a directory and run from `backend`:
 
 ```sh

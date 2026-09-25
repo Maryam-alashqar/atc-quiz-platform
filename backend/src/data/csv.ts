@@ -34,23 +34,34 @@ const headers = {
 } as const;
 
 type Row = Record<string, string>;
-export type CsvFiles = Record<keyof typeof headers, string>;
+export type SheetKind = keyof typeof headers;
+export const SHEETS = Object.keys(headers) as SheetKind[];
+export type CsvFiles = Record<SheetKind, string>;
+/** Each table as CSV text, or as rows already read from a spreadsheet. */
+export type SheetSources = Record<SheetKind, string | string[][]>;
 
 function fail(location: string, message: string): never {
   throw new Error(`${location}: ${message}`);
 }
 
-function rows(text: string, kind: keyof CsvFiles): Row[] {
+function rows(source: string | string[][], kind: SheetKind): Row[] {
   const location = `${kind}.csv`;
   let records: string[][];
-  try {
-    records = parse(text, {
-      bom: true,
-      skip_empty_lines: true,
-      max_record_size: 100_000,
-    }) as string[][];
-  } catch {
-    return fail(location, 'Malformed CSV; check quoting and column counts.');
+  if (Array.isArray(source)) {
+    // Already split into cells (an Excel sheet); every row must have the header's width.
+    records = source.map((row) => [...row]);
+    if (records.some((row) => row.length !== records[0].length))
+      return fail(location, 'Every row must have the same number of columns.');
+  } else {
+    try {
+      records = parse(source, {
+        bom: true,
+        skip_empty_lines: true,
+        max_record_size: 100_000,
+      }) as string[][];
+    } catch {
+      return fail(location, 'Malformed CSV; check quoting and column counts.');
+    }
   }
   const columns = records.shift();
   if (
@@ -173,7 +184,7 @@ function unique(values: string[], location: string): Set<string> {
   return set;
 }
 
-export function parseDataset(files: CsvFiles, demoNow?: Date) {
+export function parseDataset(files: SheetSources, demoNow?: Date) {
   const classes = rows(files.classes, 'classes').map((r, i) => ({
     name: required(r.name, `classes.csv record ${i + 2}`, 'name', 100),
   }));
