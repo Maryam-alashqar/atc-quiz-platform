@@ -32,7 +32,7 @@ All demo accounts use the password **`AtcDemo2026!`**. There is no sign-up: acco
 
 | Role | Username | Name | Notes |
 | --- | --- | --- | --- |
-| Admin | `admin` | نور الحسن | Centre dashboard, all quizzes, user management |
+| Admin | `admin` | نور الحسن | Centre dashboard, all quizzes, user management, spreadsheet import |
 | Teacher | `teacher-math` | رنا الخطيب | Owns the two Arabic maths quizzes |
 | Teacher | `teacher-english` | سامي النجار | Owns the English quiz (with negative marking) |
 | Teacher | `teacher-physics` | هبة العبادي | Owns the upcoming Arabic physics quiz |
@@ -47,7 +47,7 @@ Each student can take each quiz **once**, so use a different student for each tr
 1. Sign in as `s10a-05`. Open *English Grammar: Weekly Review*, start it, answer a few questions, **reload the page** (the timer and answers survive), then submit.
 2. Sign in as `teacher-english`. The dashboard shows how many have finished the quiz and how many haven't started. Open it to see exactly who hasn't, or download the results as CSV.
 3. Sign in as `teacher-math`. Look at *My Students*, then create a quiz for **named students** (for example two students from 10B). Try publishing it incomplete to see the checks, or use *Duplicate* on an existing quiz to reuse it for next week. Then sign in as one of those students and as a classmate who wasn't named: only the named student sees it.
-4. Sign in as `admin` and look at the dashboard, then add a student under *Users* and sign in with the details it shows.
+4. Sign in as `admin` and look at the dashboard. Add a student under *Users* and sign in with the details it shows. Under *Import*, download the example workbook and upload it: the check shows what it will add before you import.
 
 Use the language button to switch between العربية and English. Try it at phone width. Any user can change their own password from the key icon or their name at the top (*My account*).
 
@@ -66,7 +66,9 @@ Docker loads them on start. They are loaded by **the same importer** used for re
 
 ### Loading the real spreadsheets
 
-Export the four sheets as UTF-8 CSV with the column headers described in [backend/prisma/data/README.md](backend/prisma/data/README.md), put them in one folder, and run:
+**In the browser (admin):** *Import* in the admin menu takes one Excel workbook with the sheets `classes`, `users`, `quizzes` and `questions`, or the four CSV files. The file is checked first. The page shows how many classes, people, quizzes and questions will be added and how many already exist, or the sheet and row of each problem. Nothing is saved until you choose *Import now*. Download the example workbook from the same page: it adds a class 12A with six students, a teacher and a quiz. Sign in as `s12a-01` / `Welcome2026!` afterwards to see the quiz.
+
+**From a terminal:** export the four sheets as UTF-8 CSV with the column headers described in [backend/prisma/data/README.md](backend/prisma/data/README.md), put them in one folder, and run:
 
 ```sh
 docker compose cp ./my-csv-folder backend:/tmp/import

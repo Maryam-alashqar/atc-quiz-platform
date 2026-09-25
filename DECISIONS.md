@@ -35,7 +35,7 @@ React + TypeScript (Vite, Tailwind) for the frontend, NestJS + TypeScript for th
 - Teachers see results for their own quizzes. The admin sees everything.
 
 **Data**
-- The real data will arrive as spreadsheets, so the sample data is four CSV files: classes, users, quizzes and questions. They are loaded by the **same importer** that will load the real exports, which shows the data really is loadable.
+- The real data will arrive as spreadsheets. The admin loads them on the *Import* page: one Excel workbook with four sheets (classes, users, quizzes, questions), or the same tables as CSV files. The file is checked and the page shows exactly what will change before anything is saved. The sample data uses the **same importer** and validation, which shows the data really is loadable. A command-line version exists for bulk or scripted loads.
 
 ## Built beyond the brief, and why
 
@@ -57,11 +57,12 @@ React + TypeScript (Vite, Tailwind) for the frontend, NestJS + TypeScript for th
 | **Duplicate a quiz** | Weekly quizzes are often last week's with small changes. The copy keeps the questions, marking and audience but clears the dates, and saving creates a new quiz. The original and its results are untouched. |
 | **Change your own password** | Everyone starts with a password the admin handed out. The current password is required before a new one is accepted, and attempts are rate-limited per account. |
 | **Nothing lost by accident** | The editor asks before leaving with unsaved changes. The quiz page asks before leaving and says the timer keeps running, and it warns at 5 minutes and 1 minute left. Each page names the browser tab, which helps students with several tabs open. |
+| **Spreadsheet import page** | "The real data will arrive as spreadsheets": the admin uploads the Excel file itself (or CSV), sees a check of exactly what will be added and what already exists, or the sheet and row of each problem, and only then imports. The check runs the real import and rolls it back, so it can't disagree with the result. |
 | **Login rate limit per account** | Limiting by IP alone would lock a whole class out when the quiz starts, because everyone on the centre's Wi-Fi shares one public IP. The limit is per IP *and* username. |
 
 ## Deliberately left out
 
-- **XLSX upload UI.** A CSV import command exists (`npm run db:import -- <folder>`). A spreadsheet upload screen with column mapping is next week's work.
+- **Column mapping for spreadsheets laid out differently.** The import expects our sheet and column names (the example workbook shows them). Mapping someone else's columns onto ours is next week's work.
 - **Password reset by email, and forcing a password change on first login.** The admin hands out and resets passwords, and every user can change their own. That covers a small centre where everyone is known by name.
 - **Deleting or deactivating accounts.** Attempts reference the student, and old results must stay intact. Deactivation is the right fix. Deletion isn't.
 - **Teachers moving students between classes.** A student's class decides the quizzes of every teacher, so class changes stay with the admin. A teacher who wants a quiz for particular students names them on the quiz instead.
@@ -77,11 +78,12 @@ React + TypeScript (Vite, Tailwind) for the frontend, NestJS + TypeScript for th
 - **Expiry is lazy.** An abandoned attempt past its deadline is graded the next time anything reads it: the student, the quiz's results, or a dashboard, which each grade overdue attempts before reporting. There is no background worker. That's enough at this size, but a scheduled job would be better at scale.
 - **The audience is frozen with the questions.** Once a student has started, the classes and named students can't change, just like the points. To include someone later, the teacher makes a second quiz for them.
 - **The CSV import creates whole-class quizzes.** Quizzes for named students are made in the editor.
+- **Excel date cells are read as Amman time (UTC+3).** Jordan has used UTC+3 all year since 2022. Dates typed as text must include their offset, as in the CSV files.
 - **Sessions last one hour.** A student who signed in 55 minutes before starting may be sent back to the sign-in page mid-quiz. Their answers and deadline are kept, and they resume after signing in again.
 
 ## Next week
 
-1. **Spreadsheet import screen:** upload an XLSX, map the columns, preview and validate, then import. The importer and its validation already exist.
+1. **Column mapping on import:** accept spreadsheets with different sheet or column names by letting the admin match them to ours. The upload, check and import already exist.
 2. **Answer review** after a quiz closes, per quiz, switched on by the teacher.
 3. **Question analysis for teachers:** how many students chose each option, to find questions that were unclear.
 4. **Deactivate accounts**, and require a password change on first login.

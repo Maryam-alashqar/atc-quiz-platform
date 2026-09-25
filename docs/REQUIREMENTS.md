@@ -57,7 +57,7 @@ A mobile-first, bilingual (Arabic/English) quiz platform for a tutoring centre. 
 | FR-14 | The interface works well on phones | ✅ |
 | FR-15 | Sample data: classes 10A, 10B, 11A, ~20 students each, four teachers | ✅ |
 | FR-16 | A realistic sample quiz: ~15 questions, four options each | ✅ |
-| FR-17 | Sample data is loadable, since real data will arrive as spreadsheets | ✅ CSV importer |
+| FR-17 | Sample data is loadable, since real data will arrive as spreadsheets | ✅ Excel/CSV import page with a check before import, plus a command-line importer |
 
 ### Product requirements derived from the brief
 
@@ -76,6 +76,7 @@ The brief says what Nour wants to see ("how the students did"), but not how a sm
 | PR-09 | A teacher can duplicate a quiz to reuse it for another week (new dates, same content) | ✅ |
 | PR-10 | Every user can change their own password, after entering the current one | ✅ |
 | PR-11 | Work is not lost by accident: warn before leaving the editor with unsaved changes; confirm leaving a quiz and say the timer keeps running; warn at 5 and 1 minutes left; name each page in the browser tab | ✅ |
+| PR-12 | The admin loads the centre's spreadsheets in the browser (Excel or CSV), sees what will change first, and then imports | ✅ |
 
 ## 4. Gaps in the brief and decisions taken
 
@@ -92,7 +93,7 @@ The brief says what Nour wants to see ("how the students did"), but not how a sm
 | **Editing live quizzes** | Once any attempt has started, only the title and description can change. Questions, points, timing and marking are locked to keep grading consistent. |
 | **Score visibility** | Total score and percentage are shown right after submission. Correct answers are not revealed, to reduce answer sharing. |
 | **Language/RTL** | All text is UTF-8. Each quiz has a language (`AR`/`EN`). Arabic quizzes render RTL, and the app shell works in both directions. |
-| **Spreadsheet import** | A working CSV importer, with sample CSVs that mirror the expected spreadsheet structure. The seed uses the same importer, which shows the data really is loadable. A full XLSX upload UI is deferred. |
+| **Spreadsheet import** | One importer, three ways in: the admin *Import* page (an Excel workbook with four sheets, or four CSV files), the command line, and the seed. The page checks the file by running the import and rolling it back, then imports on confirmation. Errors name the sheet and row. Existing records are never overwritten. Column mapping for differently laid-out sheets is deferred. |
 | **Login identifier** | Username, not email (e.g. `s10a-07`), because students may not have email addresses. |
 | **Answer persistence** | Each selected answer is saved to the server immediately. If connectivity drops or time runs out, scoring uses the answers already saved. |
 | **Numeric precision** | Points, penalties and scores are stored as `Decimal`, not `Float`, to avoid rounding errors with fractional penalties. |
@@ -178,6 +179,7 @@ Admin
 GET/POST /users                        list (search, role, class) / create a student or teacher
 PATCH    /users/:id                    rename, move a student to another class
 POST     /users/:id/password           set a new password
+POST     /import[?preview=true]        Excel workbook or four CSV files; preview = check and roll back
 ```
 
 Endpoint details are in [`backend/docs/`](../backend/docs/).
@@ -203,7 +205,7 @@ Loaded from `backend/prisma/data/*.csv` through the importer. The data set has 3
 | Shared | Login · App shell with role-based navigation · Language/direction toggle · My account (change password) · Tab title per page · Loading, empty and error states |
 | Student | Dashboard (open / upcoming / completed) · Quiz details + start confirmation · Quiz player (one question per screen on phones, question navigator, save indicator, sticky countdown, auto-submit at zero, resume after refresh, 5- and 1-minute warnings, confirm before leaving) · Result page (score + percentage) |
 | Teacher | Dashboard (quizzes to follow, participation by class, latest submissions) · My Students (progress per student, filters for who is behind) · Quiz list with status (edit, duplicate, results) · Quiz editor (warns before losing unsaved changes; details, whole classes or named students with a searchable picker, window, duration, marking, 15 questions × 4 options, points; read-only fields once attempts exist) · Publish · Results: Students tab (who has not started) and Attempts tab (scores) + CSV export |
-| Admin | Dashboard (participation by class and teacher, quizzes to follow, quiz status, latest submissions) · Users (add, edit, reset password) · All quizzes and results · Create a quiz for a chosen teacher |
+| Admin | Dashboard (participation by class and teacher, quizzes to follow, quiz status, latest submissions) · Users (add, edit, reset password) · Import (Excel/CSV, check then import, example workbook) · All quizzes and results · Create a quiz for a chosen teacher |
 
 The API is the only source of truth for time: the countdown uses `deadlineAt` and `serverTime` from the API, so a wrong clock on the device cannot extend the quiz.
 
@@ -227,7 +229,8 @@ The API is the only source of truth for time: the countdown uses `deadlineAt` an
 | 13 | Teacher follow-up: dashboard, per-quiz roster, My Students, named-student quizzes (PR-03 to PR-06) | ✅ |
 | 14 | Full `docker compose up --build` (db + backend + frontend) | ✅ |
 | 15 | Usability: unsaved-work guard, quiz exit and time warnings, tab titles, duplicate quiz, change own password (PR-09 to PR-11) | ✅ |
-| 16 | Root README, DECISIONS.md, AI_USAGE.md final pass | ✅ |
+| 16 | Spreadsheet import page: Excel and CSV, check before import, example workbook (PR-12) | ✅ |
+| 17 | Root README, DECISIONS.md, AI_USAGE.md final pass | ✅ |
 
 ## 12. Deliverables (byThursday)
 
@@ -244,7 +247,7 @@ Docker Compose is the reviewer path. The target is a single `docker compose up -
 
 ## 14. Deliberately out of scope
 
-- XLSX upload/mapping UI (a CSV importer CLI exists instead)
+- Column mapping for spreadsheets with different sheet or column names (the import page expects the template's names)
 - Email/SMS notifications
 - Password reset and email verification
 - Advanced analytics and charts
