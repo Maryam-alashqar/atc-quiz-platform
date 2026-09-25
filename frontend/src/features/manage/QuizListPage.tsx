@@ -1,4 +1,4 @@
-import { BarChart3, CalendarDays, FilePlus2, Pencil, Users } from 'lucide-react'
+import { BarChart3, CalendarDays, Copy, FilePlus2, Pencil, Users } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import { useManagedQuizzes } from '../../api/manage'
 import type { QuizStatus, TeacherQuizSummary } from '../../api/types'
@@ -57,6 +57,15 @@ function QuizCard({ quiz, showTeacher }: { quiz: TeacherQuizSummary; showTeacher
         <ButtonLink to={`/manage/quizzes/${quiz.id}/edit`} variant="ghost" aria-label={t('manage.edit')}>
           <Pencil className="size-4" aria-hidden="true" />
           <span className="hidden sm:inline">{t('manage.edit')}</span>
+        </ButtonLink>
+        <ButtonLink
+          to={`/manage/quizzes/new?from=${quiz.id}`}
+          variant="ghost"
+          aria-label={t('editor.duplicate')}
+          title={t('editor.duplicate')}
+          className="px-3!"
+        >
+          <Copy className="size-4" aria-hidden="true" />
         </ButtonLink>
       </div>
     </Card>

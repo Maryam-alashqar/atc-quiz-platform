@@ -393,6 +393,9 @@ export const en = {
   'title.quiz': 'Quiz',
   'title.result': 'Your result',
 
+  'editor.duplicate': 'Duplicate',
+  'editor.copySuffix': '(copy)',
+  'editor.copyNotice': 'A new quiz: set its dates, review it, then save or publish. Copied from',
   'editor.leaveTitle': 'Leave without saving?',
   'editor.leaveBody': 'You have changes that haven’t been saved. If you leave now they will be lost.',
   'editor.stay': 'Stay and save',

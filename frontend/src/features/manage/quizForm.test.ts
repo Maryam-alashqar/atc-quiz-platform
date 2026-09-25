@@ -1,5 +1,5 @@
 import type { TeacherQuizDetail } from '../../api/types'
-import { draftFromQuiz, emptyDraft, penaltyValue, publishIssues, saveIssues, toQuizInput, totalPoints, type QuizDraft } from './quizForm'
+import { copyDraft, draftFromQuiz, emptyDraft, penaltyValue, publishIssues, saveIssues, toQuizInput, totalPoints, type QuizDraft } from './quizForm'
 
 function completeDraft(overrides: Partial<QuizDraft> = {}): QuizDraft {
   return {
@@ -188,4 +188,46 @@ it('lists a missing question text once when publishing', () => {
     questions: [{ key: 'k', prompt: '', points: '1', options: ['a', 'b', 'c', 'd'], correct: 0 }],
   })
   expect(publishIssues(draft).filter((issue) => issue.key === 'editor.issue.prompt')).toHaveLength(1)
+})
+
+describe('copyDraft', () => {
+  const quiz = {
+    title: 'Week 5 review',
+    description: 'Algebra',
+    language: 'AR',
+    audience: 'STUDENTS',
+    students: [{ id: 's1', username: 's10a-01', name: 'Ali', class: null }],
+    classes: [],
+    opensAt: '2026-09-20T06:00:00.000Z',
+    closesAt: '2026-09-21T06:00:00.000Z',
+    durationMinutes: 15,
+    negativeMarking: 'FIXED',
+    penaltyValue: '0.5',
+    questions: [
+      {
+        id: 'q',
+        prompt: 'P',
+        points: '2',
+        order: 1,
+        options: ['a', 'b', 'c', 'd'].map((text, i) => ({ id: text, text, order: i + 1, isCorrect: i === 3 })),
+      },
+    ],
+  } as unknown as TeacherQuizDetail
+
+  it('keeps the content, marking and audience but asks for new dates', () => {
+    const draft = copyDraft(quiz, '(copy)')
+    expect(draft).toMatchObject({
+      title: 'Week 5 review (copy)',
+      language: 'AR',
+      audience: 'STUDENTS',
+      durationMinutes: '15',
+      negativeMarking: 'FIXED',
+      penalty: '0.5',
+      opensAt: '',
+      closesAt: '',
+    })
+    expect(draft.students.map((s) => s.id)).toEqual(['s1'])
+    expect(draft.questions[0]).toMatchObject({ prompt: 'P', correct: 3 })
+    expect(keysOf(saveIssues(draft))).toEqual(['editor.issue.window'])
+  })
 })

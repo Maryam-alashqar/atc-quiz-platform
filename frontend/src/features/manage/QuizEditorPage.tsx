@@ -1,13 +1,13 @@
-import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, CheckCircle2, LoaderCircle, Lock, Plus, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, CheckCircle2, Copy, LoaderCircle, Lock, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Link, useBlocker, useLocation, useNavigate, useParams } from 'react-router'
+import { Link, useBlocker, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { useTeachers } from '../../api/admin'
 import { ApiError } from '../../api/client'
 import { useClasses, useDeleteQuiz, useManagedQuiz, usePublishQuiz, useSaveQuiz } from '../../api/manage'
 import type { NegativeMarking, TeacherQuizDetail } from '../../api/types'
 import { useCurrentUser } from '../../app/useCurrentUser'
 import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
+import { Button, ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Dialog } from '../../components/ui/Dialog'
 import { ErrorState, Spinner } from '../../components/ui/States'
@@ -15,6 +15,7 @@ import { useI18n } from '../../i18n/context'
 import { liveState } from './liveState'
 import { StudentPicker } from './StudentPicker'
 import {
+  copyDraft,
   draftFromQuiz,
   emptyDraft,
   emptyQuestion,
@@ -159,7 +160,8 @@ function QuestionEditor({ question, index, count, locked, dir, onChange, onMove,
   )
 }
 
-function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
+/** `copyOf`: start a new quiz from an existing one ("Duplicate"). */
+function Editor({ quiz, copyOf }: { quiz?: TeacherQuizDetail; copyOf?: TeacherQuizDetail }) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const classes = useClasses()
@@ -171,8 +173,11 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
   const isAdmin = user.role === 'ADMIN'
   const choosingOwner = !quiz && isAdmin
   const teachers = useTeachers(choosingOwner)
-  const [teacherId, setTeacherId] = useState('')
-  const [draft, setDraft] = useState<QuizDraft>(() => (quiz ? draftFromQuiz(quiz) : emptyDraft()))
+  // A copy made by the admin stays with the original teacher unless changed.
+  const [teacherId, setTeacherId] = useState(copyOf?.teacher.id ?? '')
+  const [draft, setDraft] = useState<QuizDraft>(() =>
+    quiz ? draftFromQuiz(quiz) : copyOf ? copyDraft(copyOf, t('editor.copySuffix')) : emptyDraft(),
+  )
   const [dirty, setDirty] = useState(false)
   // Read at navigation time, so a save that clears it and then redirects is never blocked.
   const dirtyRef = useRef(false)
@@ -275,8 +280,23 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-serif text-3xl font-bold text-ink sm:text-4xl">{quiz ? t('editor.editTitle') : t('nav.newQuiz')}</h1>
           {state && <Badge tone={state.tone}>{t(state.key)}</Badge>}
+          {quiz && (
+            <ButtonLink to={`/manage/quizzes/new?from=${quiz.id}`} variant="ghost" className="ms-auto">
+              <Copy className="size-4" aria-hidden="true" />
+              {t('editor.duplicate')}
+            </ButtonLink>
+          )}
         </div>
       </div>
+
+      {copyOf && (
+        <div className="flex gap-3 rounded-2xl bg-sky-soft p-4 text-sm text-ink">
+          <Copy className="mt-0.5 size-5 shrink-0 text-secondary" aria-hidden="true" />
+          <p>
+            {t('editor.copyNotice')} <bdi className="font-semibold">{copyOf.title}</bdi>
+          </p>
+        </div>
+      )}
 
       {locked && (
         <div className="flex gap-3 rounded-2xl bg-gold-soft p-4 text-sm text-ink">
@@ -568,8 +588,11 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
 
 export function QuizEditorPage() {
   const { id } = useParams()
-  const quiz = useManagedQuiz(id)
-  if (!id) return <Editor />
+  const [params] = useSearchParams()
+  // /manage/quizzes/new?from=<id> starts a new quiz as a copy of <id>.
+  const source = id ?? params.get('from') ?? undefined
+  const quiz = useManagedQuiz(source)
+  if (!source) return <Editor />
   if (quiz.isPending) return <Spinner />
   if (quiz.isError)
     return (
@@ -577,6 +600,6 @@ export function QuizEditorPage() {
         <ErrorState error={quiz.error} onRetry={() => quiz.refetch()} />
       </Card>
     )
-  // Keyed by id so switching quizzes resets the form.
-  return <Editor key={quiz.data.id} quiz={quiz.data} />
+  // Keyed so switching quizzes (or from a copy to its saved version) resets the form.
+  return id ? <Editor key={quiz.data.id} quiz={quiz.data} /> : <Editor key={`copy-${quiz.data.id}`} copyOf={quiz.data} />
 }

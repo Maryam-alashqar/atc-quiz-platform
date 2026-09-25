@@ -189,3 +189,17 @@ export function publishIssues(draft: QuizDraft): Issue[] {
 export function totalPoints(draft: QuizDraft): number {
   return draft.questions.reduce((sum, question) => sum + (Number(question.points) || 0), 0)
 }
+
+/**
+ * A new draft from an existing quiz: same questions, marking, language and audience, but
+ * no dates, since a copy is almost always for another week. Saving it creates a new quiz;
+ * the original (and its attempts) is untouched.
+ */
+export function copyDraft(quiz: TeacherQuizDetail, titleSuffix: string): QuizDraft {
+  return {
+    ...draftFromQuiz(quiz),
+    title: `${quiz.title} ${titleSuffix}`.slice(0, 200),
+    opensAt: '',
+    closesAt: '',
+  }
+}

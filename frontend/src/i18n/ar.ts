@@ -394,6 +394,9 @@ export const ar: Record<MessageKey, string> = {
   'title.quiz': 'اختبار',
   'title.result': 'نتيجتك',
 
+  'editor.duplicate': 'نسخ الاختبار',
+  'editor.copySuffix': '(نسخة)',
+  'editor.copyNotice': 'اختبار جديد: حدّد مواعيده وراجعه ثم احفظه أو انشره. منسوخ من',
   'editor.leaveTitle': 'المغادرة بدون حفظ؟',
   'editor.leaveBody': 'لديك تعديلات لم تُحفظ. إذا غادرت الآن ستضيع.',
   'editor.stay': 'البقاء والحفظ',
