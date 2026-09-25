@@ -1,6 +1,6 @@
 import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, CheckCircle2, LoaderCircle, Lock, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Link, useBlocker, useLocation, useNavigate, useParams } from 'react-router'
 import { useTeachers } from '../../api/admin'
 import { ApiError } from '../../api/client'
 import { useClasses, useDeleteQuiz, useManagedQuiz, usePublishQuiz, useSaveQuiz } from '../../api/manage'
@@ -174,6 +174,15 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
   const [teacherId, setTeacherId] = useState('')
   const [draft, setDraft] = useState<QuizDraft>(() => (quiz ? draftFromQuiz(quiz) : emptyDraft()))
   const [dirty, setDirty] = useState(false)
+  // Read at navigation time, so a save that clears it and then redirects is never blocked.
+  const dirtyRef = useRef(false)
+  useEffect(() => {
+    dirtyRef.current = dirty
+  }, [dirty])
+  // In-app navigation (sidebar, back link) would otherwise drop unsaved edits silently.
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) => dirtyRef.current && currentLocation.pathname !== nextLocation.pathname,
+  )
   const [issues, setIssues] = useState<Issue[]>([])
   const [serverError, setServerError] = useState<string | null>(null)
   // A message carried over from the create → edit redirect.
@@ -228,6 +237,7 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
     const input = { ...toQuizInput(draft), ...(choosingOwner && { teacherId }) }
     try {
       const saved = await save.mutateAsync(locked ? { title: input.title, description: input.description } : input)
+      dirtyRef.current = false
       setDirty(false)
       if (andPublish) await publish.mutateAsync(saved.id)
       setSavedMessage(t(andPublish ? 'editor.published' : 'editor.saved'))
@@ -245,6 +255,7 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
     if (!quiz) return
     try {
       await remove.mutateAsync(quiz.id)
+      dirtyRef.current = false
       navigate('/manage/quizzes', { replace: true })
     } catch (error) {
       setConfirmDelete(false)
@@ -515,6 +526,24 @@ function Editor({ quiz }: { quiz?: TeacherQuizDetail }) {
           )}
         </div>
       </div>
+
+      <Dialog
+        open={blocker.state === 'blocked'}
+        onClose={() => blocker.reset?.()}
+        title={t('editor.leaveTitle')}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => blocker.reset?.()}>
+              {t('editor.stay')}
+            </Button>
+            <Button variant="danger" onClick={() => blocker.proceed?.()}>
+              {t('editor.leave')}
+            </Button>
+          </>
+        }
+      >
+        {t('editor.leaveBody')}
+      </Dialog>
 
       <Dialog
         open={confirmDelete}

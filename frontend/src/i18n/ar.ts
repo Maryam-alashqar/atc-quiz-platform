@@ -390,4 +390,17 @@ export const ar: Record<MessageKey, string> = {
   'picker.hint': 'ابحث عن طالب، أو اختر صفاً لعرض طلابه.',
   'picker.noMatches': 'لا يوجد طلاب آخرون مطابقون.',
   'picker.addAll': 'إضافة الكل ({n})',
+
+  'title.quiz': 'اختبار',
+  'title.result': 'نتيجتك',
+
+  'editor.leaveTitle': 'المغادرة بدون حفظ؟',
+  'editor.leaveBody': 'لديك تعديلات لم تُحفظ. إذا غادرت الآن ستضيع.',
+  'editor.stay': 'البقاء والحفظ',
+  'editor.leave': 'المغادرة على أي حال',
+
+  'player.warnMinutes': 'متبقٍّ {n} دقيقة: راجع إجاباتك وسلّم',
+  'player.leaveTitle': 'مغادرة الاختبار؟',
+  'player.leaveBody': 'إجاباتك محفوظة ويمكنك العودة لإكماله، لكن المؤقت يستمر: متبقٍّ {time}.',
+  'player.leaveConfirm': 'مغادرة',
 }
